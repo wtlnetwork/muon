@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 import { FaWifi, FaSpinner } from "react-icons/fa";
 
-const startHotspot = callable<[], void>("start_hotspot");
+const startHotspot = callable<[ssid: string, passphrase: string], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
 
 function Content() {
@@ -22,7 +22,7 @@ function Content() {
     setHotspotStatus("loading");
     try {
       if (hotspotStatus === "start") {
-        await startHotspot();
+        await startHotspot("Steam Deck", "MySecurePass");
         setHotspotStatus("stop");
         toaster.toast({ title: "Hotspot Started", body: "Your Steam Deck is now a hotspot." });
       } else {

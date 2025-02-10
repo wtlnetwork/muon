@@ -9,8 +9,6 @@ class Plugin:
         self.wifi_interface = "wlan0"
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
-        self.ssid = "SteamDeck-Hotspot"
-        self.passphrase = "MySecurePass"
         self.hotspot_active = False
 
     async def _main(self):
@@ -32,9 +30,11 @@ class Plugin:
         decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
         return stdout.decode().strip()
 
-    async def start_hotspot(self):
+    async def start_hotspot(self, ssid: str, passphrase: str):
         decky.logger.info("Starting Hotspot")
         try:
+            self.ssid = ssid
+            self.passphrase = passphrase
             await self.check_dependencies()
             await self.allow_dhcp_firewalld()
             await self.ensure_wlan0_up()
