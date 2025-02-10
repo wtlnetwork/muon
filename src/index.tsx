@@ -2,114 +2,63 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Navigation,
   staticClasses
 } from "@decky/ui";
 import {
-  addEventListener,
-  removeEventListener,
   callable,
   definePlugin,
-  toaster,
-  // routerHook
-} from "@decky/api"
+  toaster
+} from "@decky/api";
 import { useState } from "react";
-import { FaShip } from "react-icons/fa";
+import { FaWifi, FaSpinner } from "react-icons/fa";
 
-// import logo from "../assets/logo.png";
-
-// This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
-// Note the type annotations:
-//  the first one: [first: number, second: number] is for the arguments
-//  the second one: number is for the return value
-const add = callable<[first: number, second: number], number>("add");
-
-// This function calls the python function "start_timer", which takes in no arguments and returns nothing.
-// It starts a (python) timer which eventually emits the event 'timer_event'
-const startTimer = callable<[], void>("start_timer");
+const startHotspot = callable<[], void>("start_hotspot");
+const stopHotspot = callable<[], void>("stop_hotspot");
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
 
-  const onClick = async () => {
-    const result = await add(Math.random(), Math.random());
-    setResult(result);
+  const handleClick = async () => {
+    setHotspotStatus("loading");
+    try {
+      if (hotspotStatus === "start") {
+        await startHotspot();
+        setHotspotStatus("stop");
+        toaster.toast({ title: "Hotspot Started", body: "Your Steam Deck is now a hotspot." });
+      } else {
+        await stopHotspot();
+        setHotspotStatus("start");
+        toaster.toast({ title: "Hotspot Stopped", body: "Hotspot has been disabled." });
+      }
+    } catch (error) {
+      toaster.toast({ title: "Error", body: "Failed to toggle hotspot." });
+      setHotspotStatus(hotspotStatus === "start" ? "start" : "stop");
+    }
   };
 
   return (
-    <PanelSection title="Panel Section">
+    <PanelSection title="Hotspot Control">
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={onClick}
+          onClick={handleClick}
+          disabled={hotspotStatus === "loading"}
+          icon={hotspotStatus === "loading" ? <FaSpinner className="animate-spin" /> : <FaWifi />}
         >
-          {result ?? "Add two numbers via Python"}
+          {hotspotStatus === "start" ? "Start Hotspot" : hotspotStatus === "loading" ? "Working..." : "Stop Hotspot"}
         </ButtonItem>
       </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => startTimer()}
-        >
-          {"Start Python timer"}
-        </ButtonItem>
-      </PanelSectionRow>
-
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow> */}
-
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
     </PanelSection>
   );
 };
 
 export default definePlugin(() => {
-  console.log("Template plugin initializing, this is called once on frontend startup")
-
-  // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-  //   exact: true,
-  // });
-
-  // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
-    test1: string,
-    test2: boolean,
-    test3: number
-  ]>("timer_event", (test1, test2, test3) => {
-    console.log("Template got timer_event with:", test1, test2, test3)
-    toaster.toast({
-      title: "template got timer_event",
-      body: `${test1}, ${test2}, ${test3}`
-    });
-  });
+  console.log("Hotspot plugin initializing");
 
   return {
-    // The name shown in various decky menus
-    name: "Test Plugin",
-    // The element displayed at the top of your plugin's menu
-    titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
-    // The content of your plugin's menu
-    content: <Content />,
-    // The icon displayed in the plugin list
-    icon: <FaShip />,
-    // The function triggered when your plugin unloads
-    onDismount() {
-      console.log("Unloading")
-      removeEventListener("timer_event", listener);
-      // serverApi.routerHook.removeRoute("/decky-plugin-test");
-    },
+    name: "Muon",
+    titleView: <div className={staticClasses.Title}>Muon</div>,
+    content: <Content />, 
+    icon: <FaWifi />, 
   };
 });

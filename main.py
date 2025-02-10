@@ -1,57 +1,131 @@
 import os
-
-# The decky plugin module is located at decky-loader/plugin
-# For easy intellisense checkout the decky-loader code repo
-# and add the `decky-loader/plugin/imports` path to `python.analysis.extraPaths` in `.vscode/settings.json`
-import decky
 import asyncio
+import decky
+import subprocess
 
 class Plugin:
-    # A normal method. It can be called from the TypeScript side using @decky/api.
-    async def add(self, left: int, right: int) -> int:
-        return left + right
+    def __init__(self):
+        self.wifi_interface = "wlan0"
+        self.ip_address = "192.168.8.1"
+        self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
+        self.ssid = "SteamDeck-Hotspot"
+        self.passphrase = "MySecurePass"
+        self.hotspot_active = False
 
-    async def long_running(self):
-        await asyncio.sleep(15)
-        # Passing through a bunch of random data, just as an example
-        await decky.emit("timer_event", "Hello from the backend!", True, 2)
-
-    # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
-        self.loop = asyncio.get_event_loop()
-        decky.logger.info("Hello World!")
+        decky.logger.info("Hotspot Plugin Loaded")
 
-    # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
-    # completely removed
     async def _unload(self):
-        decky.logger.info("Goodnight World!")
-        pass
+        decky.logger.info("Stopping Hotspot Plugin")
+        if self.hotspot_active:
+            await self.stop_hotspot()
+        decky.logger.info("Plugin Unloaded")
 
-    # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
-    # plugin that may remain on the system
-    async def _uninstall(self):
-        decky.logger.info("Goodbye World!")
-        pass
+    async def run_command(self, command: str, check: bool = False):
+        result = await asyncio.create_subprocess_shell(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = await result.communicate()
+        return stdout.decode().strip()
 
-    async def start_timer(self):
-        self.loop.create_task(self.long_running())
+    async def start_hotspot(self):
+        decky.logger.info("Starting Hotspot")
+        await self.check_dependencies()
+        await self.allow_dhcp_firewalld()
+        await self.ensure_wlan0_up()
+        await self.capture_original_network_config()
+        await self.capture_service_states()
+        await self.stop_network_services()
+        await self.configure_ip()
+        await self.start_wifi_ap()
+        await self.start_dhcp_server()
+        self.hotspot_active = True
+        decky.logger.info("Hotspot is active")
 
-    # Migrations that should be performed before entering `_main()`.
-    async def _migration(self):
-        decky.logger.info("Migrating")
-        # Here's a migration example for logs:
-        # - `~/.config/decky-template/template.log` will be migrated to `decky.decky_LOG_DIR/template.log`
-        decky.migrate_logs(os.path.join(decky.DECKY_USER_HOME,
-                                               ".config", "decky-template", "template.log"))
-        # Here's a migration example for settings:
-        # - `~/homebrew/settings/template.json` is migrated to `decky.decky_SETTINGS_DIR/template.json`
-        # - `~/.config/decky-template/` all files and directories under this root are migrated to `decky.decky_SETTINGS_DIR/`
-        decky.migrate_settings(
-            os.path.join(decky.DECKY_HOME, "settings", "template.json"),
-            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-template"))
-        # Here's a migration example for runtime data:
-        # - `~/homebrew/template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        # - `~/.local/share/decky-template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        decky.migrate_runtime(
-            os.path.join(decky.DECKY_HOME, "template"),
-            os.path.join(decky.DECKY_USER_HOME, ".local", "share", "decky-template"))
+    async def stop_hotspot(self):
+        decky.logger.info("Stopping Hotspot")
+        await self.restore_network_config()
+        self.hotspot_active = False
+        decky.logger.info("Hotspot Stopped")
+
+    async def check_dependencies(self):
+        for dep in ["dnsmasq", "hostapd"]:
+            result = await self.run_command(f"which {dep}")
+            if not result:
+                decky.logger.error(f"{dep} is not installed.")
+                raise Exception(f"{dep} is missing.")
+
+    async def ensure_wlan0_up(self):
+        result = await self.run_command("ip link show wlan0")
+        if "state DOWN" in result:
+            await self.run_command("sudo ip link set wlan0 up")
+        elif "state UNKNOWN" in result:
+            raise Exception("wlan0 interface not found.")
+
+    async def stop_network_services(self):
+        await self.run_command("sudo systemctl stop NetworkManager")
+        await self.run_command("sudo systemctl stop iwd")
+
+    async def allow_dhcp_firewalld(self):
+        firewalld_status = await self.run_command("sudo systemctl is-active firewalld")
+        if firewalld_status != "active":
+            return
+        active_zone = await self.run_command("sudo firewall-cmd --get-active-zones | awk 'NR==1{print $1}'")
+        await self.run_command(f"sudo firewall-cmd --zone={active_zone} --add-service=dhcp")
+        await self.run_command("sudo firewall-cmd --reload")
+
+    async def capture_original_network_config(self):
+        decky.logger.info("Capturing current network settings...")
+        self.original_ip = await self.extract_ip()
+        self.original_gateway = await self.extract_gateway()
+        self.original_dns = await self.extract_dns()
+
+    async def restore_network_config(self):
+        decky.logger.info("Restoring original network settings...")
+        await self.run_command("sudo systemctl stop hostapd")
+        await self.run_command("sudo pkill dnsmasq")
+        await self.run_command("sudo ip link set wlan0 down")
+        await self.run_command("sudo iw dev wlan0 set type managed")
+        await self.run_command("sudo ip link set wlan0 up")
+        if self.original_ip:
+            await self.run_command(f"sudo ip addr add {self.original_ip}/24 dev wlan0")
+        if self.original_gateway:
+            await self.run_command(f"sudo ip route add default via {self.original_gateway}")
+        if self.original_dns:
+            await self.set_dns_servers(self.original_dns)
+        await self.restart_network_services()
+
+    async def configure_ip(self):
+        await self.run_command(f"sudo ip addr flush dev {self.wifi_interface}")
+        await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}")
+
+    async def start_wifi_ap(self):
+        await self.run_command(f"sudo ip link set {self.wifi_interface} down")
+        await self.run_command(f"sudo iw dev {self.wifi_interface} set type __ap")
+        await self.run_command(f"sudo ip link set {self.wifi_interface} up")
+        await self.run_command("sudo systemctl restart hostapd")
+
+    async def start_dhcp_server(self):
+        await self.run_command("sudo pkill dnsmasq")
+        await self.run_command(f"sudo dnsmasq -C /tmp/dnsmasq-hotspot.conf 2>&1 &")
+
+    async def extract_ip(self):
+        ip_output = await self.run_command("ip addr show wlan0")
+        return ip_output.split()[1] if ip_output else None
+
+    async def extract_gateway(self):
+        route_output = await self.run_command("ip route show default")
+        return route_output.split()[2] if route_output else None
+
+    async def extract_dns(self):
+        dns_output = await self.run_command("resolvectl status")
+        return dns_output.split() if dns_output else []
+
+    async def set_dns_servers(self, dns_list):
+        dns_config = "\n".join([f"nameserver {dns}" for dns in dns_list])
+        with open("/etc/resolv.conf", "w") as f:
+            f.write(dns_config)
+
+    async def restart_network_services(self):
+        await self.run_command("sudo systemctl restart NetworkManager")
+        await self.run_command("sudo systemctl restart iwd")
