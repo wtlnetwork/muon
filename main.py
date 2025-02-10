@@ -3,6 +3,7 @@ import asyncio
 import decky
 import subprocess
 import re
+import socket
 
 class Plugin:
     def __init__(self):
@@ -136,6 +137,7 @@ disassoc_low_ack=0
         except Exception as e:
             decky.logger.error(f"❌ Failed to generate hostapd config: {str(e)}")
 
+
     async def check_dnsmasq(self, wifi_interface, dhcp_range, ip_address):
         """Verify dnsmasq is running."""
         decky.logger.info("🔍 Checking if dnsmasq is running...")
@@ -147,6 +149,15 @@ disassoc_low_ack=0
         else:
             decky.logger.info("✅ dnsmasq is running correctly.")
 
+    async def get_hostname(self):
+        """Retrieve the system's current hostname."""
+        try:
+            hostname = socket.gethostname()
+            decky.logger.info(f"📡 Current Hostname: {hostname}")
+            return hostname
+        except Exception as e:
+            decky.logger.error(f"❌ Failed to retrieve hostname: {str(e)}")
+            return None
 
     async def capture_service_states(self):
         """Capture the current state of NetworkManager and iwd before stopping them."""
