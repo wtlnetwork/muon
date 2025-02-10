@@ -1,7 +1,7 @@
 {
-  "name": "decky-plugin-template",
+  "name": "muon",
   "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "description": "Ad-hoc networking plugin for Decky.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -10,21 +10,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/wtlnetwork/muon.git"
   },
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
     "steam-deck",
-    "deck"
+    "deck",
+    "ad-hoc",
+    "wifi",
+    "hotspot",
+    "tethering",
+    "networking"
   ],
-  "author": "You <you@you.tld>",
+  "author": "Jenomorph/WTLNetwork",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/wtlnetwork/muon/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/wtlnetwork/muon",
   "devDependencies": {
     "@decky/rollup": "^1.0.1",
     "@decky/ui": "^4.7.2",
