@@ -80,6 +80,87 @@ class Plugin:
             decky.logger.error("❌ wlan0 interface not found. Check your WiFi adapter.")
             raise Exception("wlan0 interface not found.")
 
+    async def generate_dnsmasq_config(self, dnsmasq_config, wifi_interface, dhcp_range, ip_address, dnsmasq_log="/var/log/dnsmasq.log"):
+        """Generate a fresh dnsmasq configuration file."""
+        decky.logger.info(f"📝 Generating dnsmasq config at {dnsmasq_config}...")
+
+        config_content = f"""
+interface={wifi_interface}
+bind-dynamic
+dhcp-range={dhcp_range}
+dhcp-option=3,{ip_address}  # Gateway
+dhcp-option=6,1.1.1.1,8.8.8.8  # DNS for clients
+port=0  # Disable DNS serving
+log-dhcp
+log-facility={dnsmasq_log}  # Save logs here
+"""
+
+        try:
+            with open(dnsmasq_config, "w") as f:
+                f.write(config_content)
+            decky.logger.info("✅ dnsmasq config generated successfully.")
+        except Exception as e:
+            decky.logger.error(f"❌ Failed to generate dnsmasq config: {str(e)}")
+
+    async def generate_hostapd_config(self, hostapd_config, wifi_interface, ssid, passphrase, channel=6, country_code="US"):
+        """Generate a fresh hostapd configuration file."""
+        decky.logger.info(f"📝 Generating hostapd config at {hostapd_config}...")
+
+        config_content = f"""
+interface={wifi_interface}
+driver=nl80211
+ssid={ssid}
+hw_mode=g
+channel={channel}
+country_code={country_code}
+ieee80211d=1
+ieee80211n=1
+wmm_enabled=1
+ht_capab=[HT40+]
+auth_algs=1
+wpa=2
+wpa_passphrase={passphrase}
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+logger_syslog=-1
+logger_syslog_level=0
+logger_stdout=-1
+logger_stdout_level=0
+disassoc_low_ack=0
+"""
+
+        try:
+            with open(hostapd_config, "w") as f:
+                f.write(config_content)
+            decky.logger.info("✅ hostapd config generated successfully.")
+        except Exception as e:
+            decky.logger.error(f"❌ Failed to generate hostapd config: {str(e)}")
+
+    async def check_dnsmasq(self, wifi_interface, dhcp_range, ip_address):
+        """Verify dnsmasq is running."""
+        decky.logger.info("🔍 Checking if dnsmasq is running...")
+        output = await self.run_command("pgrep -a dnsmasq")
+
+        if not output:
+            decky.logger.error("❌ dnsmasq is NOT running! Restarting...")
+            await self.start_dhcp_server(wifi_interface, dhcp_range, ip_address)
+        else:
+            decky.logger.info("✅ dnsmasq is running correctly.")
+
+
+    async def capture_service_states(self):
+        """Capture the current state of NetworkManager and iwd before stopping them."""
+        decky.logger.info("Capturing service states for NetworkManager and iwd...")
+        self.service_states = {}
+        services = ["NetworkManager", "iwd"]
+
+        for service in services:
+            status = await self.run_command(f"sudo systemctl is-active {service}")
+            self.service_states[service] = status.strip() == "active"  # Store True if active, False if inactive
+            decky.logger.info(f"Service {service}: {'Active' if self.service_states[service] else 'Inactive'}")
+
+        decky.logger.info(f"Captured service states: {self.service_states}")
+
     async def stop_network_services(self):
         """Stop interfering network services."""
         decky.logger.info("Stopping interfering network services...")
