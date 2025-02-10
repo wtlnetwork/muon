@@ -2,6 +2,7 @@ import os
 import asyncio
 import decky
 import subprocess
+import re
 
 class Plugin:
     def __init__(self):
