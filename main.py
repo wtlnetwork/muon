@@ -14,13 +14,13 @@ class Plugin:
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
         self.hotspot_active = False
+
+    async def _main(self):
+        decky.logger.info("Hotspot Plugin Loaded")
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
         self.settings.read()
         # Ensure settings exist on initialization
         self.ensure_default_settings()
-
-    async def _main(self):
-        decky.logger.info("Hotspot Plugin Loaded")
 
     async def _unload(self):
         decky.logger.info("Stopping Hotspot Plugin")
@@ -336,7 +336,7 @@ disassoc_low_ack=0
         else:
             decky.logger.info(f"✅ wlan0 successfully set to {self.ip_address}")
 
-    async def start_wifi_ap(self):
+    async def start_wifi_ap(self, ssid, passphrase):
         """Start WiFi Access Point."""
         decky.logger.info("⚙️ Forcing wlan0 to AP mode...")
         await self.run_command(f"sudo ip link set {self.wifi_interface} down")
@@ -348,9 +348,9 @@ disassoc_low_ack=0
             os.remove("/etc/hostapd/hostapd.conf")
 
         decky.logger.info("📝 Generating new hostapd config...")
-        await self.generate_hostapd_config("/etc/hostapd/hostapd.conf", self.wifi_interface, self.ssid, self.passphrase)
+        await self.generate_hostapd_config("/etc/hostapd/hostapd.conf", self.wifi_interface, ssid, passphrase)
 
-        decky.logger.info(f"🚀 Starting WiFi Access Point: SSID={self.ssid}")
+        decky.logger.info(f"🚀 Starting WiFi Access Point: SSID={ssid}")
         await self.run_command("sudo systemctl restart hostapd", check=True)
 
     async def start_dhcp_server(self):
