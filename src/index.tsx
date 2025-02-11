@@ -11,7 +11,8 @@ import {
   toaster
 } from "@decky/api";
 import { useState, useEffect } from "react";
-import { FaWifi, FaSpinner } from "react-icons/fa";
+import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
+import { showWifiSettingsModal } from "./wifi_settings";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
@@ -36,8 +37,8 @@ function Content() {
           toaster.toast({ title: "Initializing Settings", body: "Generating default SSID and passphrase..." });
 
           const updatedConfig = await settingsRead();
-          finalSsid = updatedConfig.ssid || "Steam Deck"; // Ensure it's always a string
-          finalPassphrase = updatedConfig.passphrase || "steamdeck"; // Ensure it's always a string
+          finalSsid = updatedConfig.ssid || "Steam Deck";
+          finalPassphrase = updatedConfig.passphrase || "steamdeck";
         }
 
         setSsid(finalSsid);
@@ -105,6 +106,16 @@ function Content() {
           value={passphrase} 
           disabled={true}
         />
+        <ButtonItem
+          layout="below"
+          onClick={() =>
+            showWifiSettingsModal(ssid, passphrase, (newSsid, newPassphrase) => {
+              setSsid(newSsid);
+              setPassphrase(newPassphrase);
+            })
+          }
+          icon={<FaCog />}
+        >Edit WiFi Settings</ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem

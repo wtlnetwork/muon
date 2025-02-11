@@ -63,7 +63,8 @@ class Plugin:
     async def settings_commit(self):
         """Save settings to storage."""
         decky.logger.info("Saving hotspot settings...")
-        return self.settings.commit()
+        self.settings.commit()
+        return True
 
     async def settings_getSetting(self, key: str, default=None):
         """Retrieve a setting value."""
