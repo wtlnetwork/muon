@@ -108,7 +108,7 @@ class Plugin:
             await self.capture_service_states()
             await self.stop_network_services()
             await self.configure_ip()
-            await self.start_wifi_ap()
+            await self.start_wifi_ap(ssid, passphrase)
             await self.start_dhcp_server()
             self.hotspot_active = True
             decky.logger.info("Hotspot is active")
