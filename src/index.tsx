@@ -13,34 +13,44 @@ import {
 import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner } from "react-icons/fa";
 
-const startHotspot = callable<[ssid: string, passphrase: string], void>("start_hotspot");
+const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
-const getHostname = callable<[], string>("get_hostname");
+const settingsRead = callable<[], { ssid?: string; passphrase?: string }>("settings_read");
 const checkDependencies = callable<[], boolean>("check_dependencies");
-
-function generateRandomPassword() {
-  const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"; // Avoiding ambiguous characters
-  let password = "";
-  for (let i = 0; i < 8; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
-}
 
 function Content() {
   const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
-  const [ssid, setSsid] = useState("Steam Deck");
-  const [passphrase] = useState(generateRandomPassword());
+  const [ssid, setSsid] = useState<string>("");
+  const [passphrase, setPassphrase] = useState<string>("");
   const [dependenciesOk, setDependenciesOk] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const fetchHostnameAndDependencies = async () => {
-      const systemHostname = await getHostname();
-      setSsid(systemHostname);
-      const depsOk = await checkDependencies();
-      setDependenciesOk(depsOk);
+    const initializeSettings = async () => {
+      try {
+        const storedConfig = await settingsRead();
+
+        let finalSsid = storedConfig.ssid || "";
+        let finalPassphrase = storedConfig.passphrase || "";
+
+        if (!finalSsid || !finalPassphrase) {
+          toaster.toast({ title: "Initializing Settings", body: "Generating default SSID and passphrase..." });
+
+          const updatedConfig = await settingsRead();
+          finalSsid = updatedConfig.ssid || "Steam Deck"; // Ensure it's always a string
+          finalPassphrase = updatedConfig.passphrase || "steamdeck"; // Ensure it's always a string
+        }
+
+        setSsid(finalSsid);
+        setPassphrase(finalPassphrase);
+
+        const depsOk = await checkDependencies();
+        setDependenciesOk(depsOk);
+      } catch (error) {
+        toaster.toast({ title: "Error", body: "Failed to initialize settings." });
+      }
     };
-    fetchHostnameAndDependencies();
+
+    initializeSettings();
   }, []);
 
   const handleClick = async () => {
@@ -52,7 +62,7 @@ function Content() {
     setHotspotStatus("loading");
     try {
       if (hotspotStatus === "start") {
-        await startHotspot(ssid, passphrase);
+        await startHotspot();
         setHotspotStatus("stop");
         toaster.toast({ title: "Hotspot Started", body: `SSID: ${ssid}` });
       } else {

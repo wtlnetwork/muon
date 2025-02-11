@@ -4,13 +4,20 @@ import decky
 import subprocess
 import re
 import socket
+from settings import SettingsManager
 
 class Plugin:
     def __init__(self):
         self.wifi_interface = "wlan0"
+        self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
+        decky.logger.info(f"Settings path: {os.path.join(self.settingsDir, 'hotspot_settings.json')}")
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
         self.hotspot_active = False
+        self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
+        self.settings.read()
+        # Ensure settings exist on initialization
+        self.ensure_default_settings()
 
     async def _main(self):
         decky.logger.info("Hotspot Plugin Loaded")
@@ -20,6 +27,59 @@ class Plugin:
         if self.hotspot_active:
             await self.stop_hotspot()
         decky.logger.info("Plugin Unloaded")
+
+    def ensure_default_settings(self):
+        """Ensure SSID and passphrase are initialized and saved if missing."""
+        ssid = self.settings.getSetting("ssid", None)
+        passphrase = self.settings.getSetting("passphrase", None)
+
+        if not ssid:
+            ssid = self.get_hostname()
+            self.settings.setSetting("ssid", ssid)
+
+        if not passphrase:
+            passphrase = self.generate_random_password()
+            self.settings.setSetting("passphrase", passphrase)
+
+        # Commit the settings after ensuring they exist
+        self.settings.commit()
+        decky.logger.info(f"✅ Settings initialized: SSID={ssid}, Passphrase={passphrase}")
+
+    async def settings_read(self):
+        """Read settings from storage, ensuring they are initialized."""
+        decky.logger.info("Reading hotspot settings...")
+
+        ssid = self.settings.getSetting("ssid", None)
+        passphrase = self.settings.getSetting("passphrase", None)
+
+        # Ensure default values are present
+        if not ssid or not passphrase:
+            self.ensure_default_settings()
+            ssid = self.settings.getSetting("ssid")
+            passphrase = self.settings.getSetting("passphrase")
+
+        return {"ssid": ssid, "passphrase": passphrase}
+
+    async def settings_commit(self):
+        """Save settings to storage."""
+        decky.logger.info("Saving hotspot settings...")
+        return self.settings.commit()
+
+    async def settings_getSetting(self, key: str, default=None):
+        """Retrieve a setting value."""
+        decky.logger.info(f"Fetching setting: {key}")
+        return self.settings.getSetting(key, default)
+
+    async def settings_setSetting(self, key: str, value):
+        """Set and save a setting value."""
+        if not value:
+            decky.logger.error(f"❌ Attempted to save empty value for {key}, skipping.")
+            return False
+
+        decky.logger.info(f"Setting {key} to {value}")
+        self.settings.setSetting(key, value)
+        self.settings.commit()  # Ensure changes are written immediately
+        return True
 
     async def run_command(self, command: str, check: bool = False):
         decky.logger.info(f"Executing command: {command}")
@@ -31,11 +91,16 @@ class Plugin:
         decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
         return stdout.decode().strip()
 
-    async def start_hotspot(self, ssid: str, passphrase: str):
+    async def start_hotspot(self):
         decky.logger.info("Starting Hotspot")
         try:
-            self.ssid = ssid
-            self.passphrase = passphrase
+            ssid = self.settings.getSetting("ssid", "SteamDeck-Hotspot")
+            passphrase = self.settings.getSetting("passphrase", "steamdeck")
+
+            if not ssid or not passphrase:
+                decky.logger.error("SSID or Passphrase is missing!")
+                return False
+
             await self.check_dependencies()
             await self.allow_dhcp_firewalld()
             await self.ensure_wlan0_up()
@@ -149,15 +214,16 @@ disassoc_low_ack=0
         else:
             decky.logger.info("✅ dnsmasq is running correctly.")
 
-    async def get_hostname(self):
-        """Retrieve the system's current hostname."""
-        try:
-            hostname = socket.gethostname()
-            decky.logger.info(f"📡 Current Hostname: {hostname}")
-            return hostname
-        except Exception as e:
-            decky.logger.error(f"❌ Failed to retrieve hostname: {str(e)}")
-            return None
+    def get_hostname(self):
+        """Returns the current system hostname."""
+        decky.logger.info("Fetching system hostname...")
+        return os.uname()[1]  # Equivalent to `hostname` command
+
+    def generate_random_password(self):
+        """Generates a secure 8-character password."""
+        import random
+        charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+        return ''.join(random.choice(charset) for _ in range(8))
 
     async def capture_service_states(self):
         """Capture the current state of NetworkManager and iwd before stopping them."""
