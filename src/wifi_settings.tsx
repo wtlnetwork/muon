@@ -1,4 +1,4 @@
-import { ModalRoot, showModal } from "@decky/ui";
+import { Field, ModalRoot, showModal, Toggle } from "@decky/ui";
 import { useState } from "react";
 import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
 import { FaCheck, FaTimes } from "react-icons/fa";
@@ -80,22 +80,22 @@ const WifiSettingsModal = ({
         />
       </PanelSectionRow>
       <PanelSectionRow>
-        <label>
-          <input
-            type="checkbox"
-            checked={alwaysUse}
-            onChange={() => setAlwaysUse(!alwaysUse)}
+        <Field
+            label="Always use these credentials"
+        >
+          <Toggle
+            value={alwaysUse}
+            onChange={(toggleValue) => setAlwaysUse(toggleValue)}
           />
-          Always use these credentials
-        </label>
+        </Field>
       </PanelSectionRow>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={handleSave} icon={<FaCheck />}>
-          Save
+        <ButtonItem layout="inline" onClick={handleSave}>
+          <FaCheck /> Save
         </ButtonItem>
-        <ButtonItem layout="below" onClick={closeModal} icon={<FaTimes />}>
-          Cancel
+        <ButtonItem layout="inline" onClick={closeModal}>
+          <FaTimes /> Cancel
         </ButtonItem>
       </PanelSectionRow>
     </ModalRoot>

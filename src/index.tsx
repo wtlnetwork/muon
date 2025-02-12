@@ -17,6 +17,7 @@ import { showWifiSettingsModal } from "./wifi_settings";
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
 const checkDependencies = callable<[], boolean>("check_dependencies");
+const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 
 function Content() {
@@ -53,6 +54,9 @@ function Content() {
   
         const depsOk = await checkDependencies();
         setDependenciesOk(depsOk);
+        const hotspotActive = await isHotspotActive();
+        setHotspotStatus(hotspotActive ? "stop" : "start");
+
       } catch (error) {
         toaster.toast({ title: "Error", body: "Failed to initialize settings." });
         console.error("Failed to initialize settings:", error);
@@ -117,7 +121,7 @@ function Content() {
           disabled={true}
         />
         <ButtonItem
-          layout="below"
+          layout="inline"
           onClick={() =>
             showWifiSettingsModal(ssid, passphrase, alwaysUseStoredCredentials, async (newSsid, newPassphrase, alwaysUse) => {
               // Fetch updated values from Python after saving
@@ -130,21 +134,28 @@ function Content() {
               setAlwaysUseStoredCredentials(updatedConfig.always_use_stored_credentials);
             })
           }
-          icon={<FaCog />}
+          
         >
-          Edit WiFi Settings
+          <FaCog /> Edit WiFi Settings
         </ButtonItem>
 
 
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={handleClick}
-          disabled={hotspotStatus === "loading"}
-          icon={hotspotStatus === "loading" ? <FaSpinner className="animate-spin" /> : <FaWifi />}
-        >
-          {hotspotStatus === "start" ? "Start Hotspot" : hotspotStatus === "loading" ? "Working..." : "Stop Hotspot"}
+        <ButtonItem layout="inline" onClick={handleClick} disabled={hotspotStatus === "loading"}>
+          {hotspotStatus === "loading" ? (
+            <>
+              <FaSpinner className="animate-spin" /> Working...
+            </>
+          ) : hotspotStatus === "start" ? (
+            <>
+              <FaWifi /> Start Hotspot
+            </>
+          ) : (
+            <>
+              <FaWifi /> Stop Hotspot
+            </>
+          )}
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>

@@ -17,6 +17,17 @@ class Plugin:
         self.ssid = None
         self.passphrase = None
 
+    
+    async def is_hotspot_active(self) -> bool:
+        """Checks if the hostapd service is running."""
+        try:
+            result = await self.run_command("systemctl is-active hostapd", check=False)
+            is_active = result.strip() == "active"
+            decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
+            return is_active
+        except Exception as e:
+            decky.logger.error(f"Error checking hotspot status: {e}")
+            return False
 
     async def load_settings(self):
         """Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend."""
