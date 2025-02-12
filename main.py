@@ -148,9 +148,9 @@ class Plugin:
             await self.start_dhcp_server()
 
             self.hotspot_active = True
-            decky.logger.info("🚀 Hotspot is active")
+            decky.logger.info("Hotspot is active")
         except Exception as e:
-            decky.logger.error(f"❌ Failed to start hotspot: {str(e)}")
+            decky.logger.error(f"Failed to start hotspot: {str(e)}")
 
     async def stop_hotspot(self):
         decky.logger.info("Stopping Hotspot")
@@ -226,7 +226,7 @@ log-facility={dnsmasq_log}  # Save logs here
 
     async def generate_hostapd_config(self, hostapd_config, wifi_interface, ssid, passphrase, channel=6, country_code="US"):
         """Generate a fresh hostapd configuration file."""
-        decky.logger.info(f"📝 Generating hostapd config at {hostapd_config}...")
+        decky.logger.info(f"Generating hostapd config at {hostapd_config}...")
 
         config_content = f"""
 interface={wifi_interface}
@@ -254,9 +254,9 @@ disassoc_low_ack=0
         try:
             with open(hostapd_config, "w") as f:
                 f.write(config_content)
-            decky.logger.info("✅ hostapd config generated successfully.")
+            decky.logger.info("hostapd config generated successfully.")
         except Exception as e:
-            decky.logger.error(f"❌ Failed to generate hostapd config: {str(e)}")
+            decky.logger.error(f"Failed to generate hostapd config: {str(e)}")
 
 
     async def check_dnsmasq(self):
@@ -265,10 +265,10 @@ disassoc_low_ack=0
         output = await self.run_command("pgrep -a dnsmasq")
 
         if not output:
-            decky.logger.error("❌ dnsmasq is NOT running! Restarting...")
+            decky.logger.error("dnsmasq is NOT running! Restarting...")
             await self.start_dhcp_server()
         else:
-            decky.logger.info("✅ dnsmasq is running correctly.")
+            decky.logger.info("dnsmasq is running correctly.")
 
     async def get_hostname(self):
         """Returns the current system hostname."""
@@ -299,11 +299,11 @@ disassoc_low_ack=0
         decky.logger.info("Stopping interfering network services...")
         await self.run_command("sudo systemctl stop NetworkManager", check=False)
         await self.run_command("sudo systemctl stop iwd", check=False)
-        decky.logger.info("✅ Network services stopped.")
+        decky.logger.info("Network services stopped.")
 
     async def allow_dhcp_firewalld(self):
         """Allow DHCP traffic through firewalld for the correct zone."""
-        decky.logger.info("🔄 Checking firewalld status...")
+        decky.logger.info("Checking firewalld status...")
         firewalld_status = await self.run_command("sudo systemctl is-active firewalld")
         decky.logger.info(f"Firewalld status: {firewalld_status}")
         if firewalld_status != "active":
@@ -351,7 +351,7 @@ disassoc_low_ack=0
         await self.run_command("sudo iw dev wlan0 set type managed", check=False)
         await self.run_command("sudo ip link set wlan0 up", check=False)
 
-        decky.logger.info("🧹 Flushing IP configuration...")
+        decky.logger.info("Flushing IP configuration...")
         await self.run_command(f"sudo ip addr flush dev wlan0", check=False)
 
         if self.original_ip:
@@ -396,13 +396,13 @@ disassoc_low_ack=0
 
     async def start_wifi_ap(self, ssid, passphrase):
         """Start WiFi Access Point."""
-        decky.logger.info("⚙️ Forcing wlan0 to AP mode...")
+        decky.logger.info("Forcing wlan0 to AP mode...")
         await self.run_command(f"sudo ip link set {self.wifi_interface} down")
         await self.run_command(f"sudo iw dev {self.wifi_interface} set type __ap")
         await self.run_command(f"sudo ip link set {self.wifi_interface} up")
 
         if os.path.exists("/etc/hostapd/hostapd.conf"):
-            decky.logger.info("🗑️ Removing old hostapd config...")
+            decky.logger.info("Removing old hostapd config...")
             os.remove("/etc/hostapd/hostapd.conf")
 
         decky.logger.info("Generating new hostapd config...")
