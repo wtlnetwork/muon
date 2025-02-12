@@ -131,7 +131,7 @@ class Plugin:
             ssid = self.ssid
             passphrase = self.passphrase
 
-            decky.logger.info(f"🔹 Using SSID: {ssid}, Passphrase: {passphrase} (Always Use: {self.always_use_stored_credentials})")
+            decky.logger.info(f"Using SSID: {ssid}, Passphrase: {passphrase} (Always Use: {self.always_use_stored_credentials})")
 
             if not ssid or not passphrase:
                 decky.logger.error("SSID or Passphrase is missing! Aborting.")
@@ -176,7 +176,7 @@ class Plugin:
             self.settings.setSetting("always_use_stored_credentials", "false")
             self.settings.commit()
 
-        decky.logger.info(f"🔄 Updated credentials: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
+        decky.logger.info(f"Updated credentials: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
 
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
 
@@ -273,7 +273,7 @@ disassoc_low_ack=0
     async def get_hostname(self):
         """Returns the current system hostname."""
         decky.logger.info("Fetching system hostname...")
-        return os.uname()[1]  # Equivalent to `hostname` command
+        return os.uname()[1]
 
     def generate_random_password(self):
         """Generates a secure 8-character password."""
