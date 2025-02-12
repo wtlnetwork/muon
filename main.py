@@ -14,6 +14,9 @@ class Plugin:
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
         self.hotspot_active = False
+        self.ssid = None
+        self.passphrase = None
+
 
     async def load_settings(self):
         """Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend."""
