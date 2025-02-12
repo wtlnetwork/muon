@@ -4,20 +4,19 @@
 
 A decky-loader plugin that creates a WiFi access point for another Steam Deck to connect.
 
-### __LAN games now playable through Wi-Fi while connected to another Steam Deck!__
+### __LAN games now playable through Wi-Fi to another Steam Deck!__
 
 <div align="left" valign="middle">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://i.redd.it/09s8h9ccq73a1.gif">
    <img align="right" src="https://i.redd.it/09s8h9ccq73a1.gif" height="102px"/>
  </picture>
-
+</a>
 <div align="left" valign="middle">
  <picture>
    <source media="(prefers-color-scheme: white)" srcset="https://assets-v2.lottiefiles.com/a/c567b756-1150-11ee-954b-b32207c2d9a1/eF6XqaqeFx.gif">
    <img align="right" src="https://assets-v2.lottiefiles.com/a/c567b756-1150-11ee-954b-b32207c2d9a1/eF6XqaqeFx.gif" height="102px"/>
  </picture>
-</a>
 </a>
 <div align="left" valign="middle">
  <picture>
@@ -28,7 +27,7 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 
 **List of Options Include:**
 
-* Host random password generation
+* Random host password generation
 * Option to change hostname for the Steam Deck
 * Option for credentials being remembered for trusted devices
 
@@ -38,8 +37,8 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 
 
 
-## LAN Party Games:
-__Don't have a lot of LAN games in your library? Maybe you'll find a new gem among the LAN category!__
+## LAN Games:
+__Don't have a lot of LAN games in your library? Maybe you'll find a new gem among the steam store category!__
 
 
 
@@ -54,7 +53,7 @@ __Don't have a lot of LAN games in your library? Maybe you'll find a new gem amo
 
 
 
-## Libraries Used
+## Libraries Used & Credits
 Built using the Decky Plugin Template [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://deckbrew.xyz/discord) as a basis.
 
 Animated Wi-Fi Logo by: Esko Ahonen
