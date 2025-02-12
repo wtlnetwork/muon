@@ -149,6 +149,8 @@ class Plugin:
 
             self.hotspot_active = True
             decky.logger.info("Hotspot is active")
+            self.wlan_ip = await self.run_command(f"ip addr show {self.wifi_interface} | grep -oP 'inet \K[\d.]+/\d+'")
+            decky.logger.info(f"Using WLAN IP address: {self.wlan_ip}")
         except Exception as e:
             decky.logger.error(f"Failed to start hotspot: {str(e)}")
 
@@ -261,7 +263,7 @@ disassoc_low_ack=0
 
     async def check_dnsmasq(self):
         """Verify dnsmasq is running."""
-        decky.logger.info("🔍 Checking if dnsmasq is running...")
+        decky.logger.info("Checking if dnsmasq is running...")
         output = await self.run_command("pgrep -a dnsmasq")
 
         if not output:
@@ -302,10 +304,11 @@ disassoc_low_ack=0
         decky.logger.info("Network services stopped.")
 
     async def allow_dhcp_firewalld(self):
-        """Allow DHCP traffic through firewalld for the correct zone."""
+        """Allow DHCP traffic through firewalld for the correct zone and make it persistent."""
         decky.logger.info("Checking firewalld status...")
         firewalld_status = await self.run_command("sudo systemctl is-active firewalld")
         decky.logger.info(f"Firewalld status: {firewalld_status}")
+        
         if firewalld_status != "active":
             decky.logger.warning("Firewalld is not active. Skipping DHCP rule addition.")
             return False
@@ -317,18 +320,21 @@ disassoc_low_ack=0
 
         decky.logger.info(f"Firewalld is active. Using zone: {active_zone}")
 
-        error = await self.run_command(f"sudo firewall-cmd --zone={active_zone} --add-service=dhcp")
+        # Add DHCP service permanently
+        error = await self.run_command(f"sudo firewall-cmd --zone={active_zone} --add-service=dhcp --permanent")
         if "success" not in error.lower():
-            decky.logger.error(f"Failed to add DHCP service: {error}")
+            decky.logger.error(f"Failed to add persistent DHCP service: {error}")
             return False
 
+        # Reload firewalld to apply changes
         error = await self.run_command("sudo firewall-cmd --reload")
         if "success" not in error.lower():
             decky.logger.error(f"Failed to reload firewalld: {error}")
             return False
 
-        decky.logger.info(f"DHCP service allowed in firewalld (zone: {active_zone}).")
+        decky.logger.info(f"Persistent DHCP service allowed in firewalld (zone: {active_zone}).")
         return True
+
 
     async def capture_original_network_config(self):
         """Backup existing IP, gateway, DNS, and WiFi connection."""
@@ -377,16 +383,14 @@ disassoc_low_ack=0
         """Sets a static IP for the hotspot, ensuring it is not already assigned."""
         decky.logger.info(f"Setting static IP {self.ip_address} on {self.wifi_interface}...")
 
-        # Check if the IP is already assigned
         existing_ip = await self.run_command(f"ip addr show {self.wifi_interface} | grep {self.ip_address}", check=False)
 
         if existing_ip.strip():
             decky.logger.info(f"IP {self.ip_address} is already assigned to {self.wifi_interface}. Skipping re-assignment.")
         else:
             await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}", check=True)
-            await asyncio.sleep(1)  # Small delay
+            await asyncio.sleep(1)
 
-        # Ensure IP is assigned
         final_ip_check = await self.run_command(f"ip addr show {self.wifi_interface} | grep {self.ip_address}", check=False)
         if not final_ip_check.strip():
             decky.logger.error(f"Failed to assign IP {self.ip_address} to {self.wifi_interface}.")
@@ -407,7 +411,6 @@ disassoc_low_ack=0
 
         decky.logger.info("Generating new hostapd config...")
         await self.generate_hostapd_config("/etc/hostapd/hostapd.conf", self.wifi_interface, ssid, passphrase)
-        await self.allow_dhcp_firewalld()
         decky.logger.info(f"Starting WiFi Access Point: SSID={ssid}")
         await self.run_command("sudo systemctl restart hostapd", check=True)
 
