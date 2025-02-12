@@ -43,6 +43,7 @@ __Don't have a lot of LAN games in your library? Maybe you'll find a new gem amo
 
 
 * [Steam Store of LAN Games](https://store.steampowered.com/category/multiplayer_lan/)
+* [4 Player+ Curator Page](https://store.steampowered.com/curator/11707935-More-Than-4-Local-Multiplayer/?appid=1739300)
 
 ## Planned Updates:
 
