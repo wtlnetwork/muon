@@ -16,43 +16,53 @@ import { showWifiSettingsModal } from "./wifi_settings";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
-const settingsRead = callable<[], { ssid?: string; passphrase?: string }>("settings_read");
 const checkDependencies = callable<[], boolean>("check_dependencies");
+const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 
 function Content() {
   const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
+  const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
   const [dependenciesOk, setDependenciesOk] = useState<boolean | null>(null);
 
+  const generateRandomPassword = () => {
+    const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
+  };
+  
   useEffect(() => {
     const initializeSettings = async () => {
       try {
-        const storedConfig = await settingsRead();
-
-        let finalSsid = storedConfig.ssid || "";
-        let finalPassphrase = storedConfig.passphrase || "";
-
-        if (!finalSsid || !finalPassphrase) {
-          toaster.toast({ title: "Initializing Settings", body: "Generating default SSID and passphrase..." });
-
-          const updatedConfig = await settingsRead();
-          finalSsid = updatedConfig.ssid || "Steam Deck";
-          finalPassphrase = updatedConfig.passphrase || "steamdeck";
+        // Call load_settings instead of settingsRead
+        const storedConfig = await callable<[], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>("load_settings")();
+        let alwaysUse = storedConfig.always_use_stored_credentials;
+        let finalSsid = storedConfig.ssid;
+        let finalPassphrase = storedConfig.passphrase;
+  
+        if (!finalSsid || !finalPassphrase || finalSsid === "undefined" || finalPassphrase === "undefined") {
+          toaster.toast({ title: "Warning", body: "Stored credentials missing! Generating new credentials as failsafe." });
+          finalSsid = await callable<[], string>("get_hostname")();
+          finalPassphrase = generateRandomPassword();
+          await updateCredentials(finalSsid, finalPassphrase, alwaysUse);
         }
-
+  
         setSsid(finalSsid);
         setPassphrase(finalPassphrase);
-
+        setAlwaysUseStoredCredentials(alwaysUse);
+  
         const depsOk = await checkDependencies();
         setDependenciesOk(depsOk);
       } catch (error) {
         toaster.toast({ title: "Error", body: "Failed to initialize settings." });
+        console.error("Failed to initialize settings:", error);
       }
     };
-
+  
     initializeSettings();
   }, []);
+  
+  
 
   const handleClick = async () => {
     if (passphrase.length < 8 || passphrase.length > 63) {
@@ -109,13 +119,23 @@ function Content() {
         <ButtonItem
           layout="below"
           onClick={() =>
-            showWifiSettingsModal(ssid, passphrase, (newSsid, newPassphrase) => {
-              setSsid(newSsid);
-              setPassphrase(newPassphrase);
+            showWifiSettingsModal(ssid, passphrase, alwaysUseStoredCredentials, async (newSsid, newPassphrase, alwaysUse) => {
+              // Fetch updated values from Python after saving
+              const updatedConfig = await callable<[string, string, boolean], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>(
+                "update_credentials"
+              )(newSsid, newPassphrase, alwaysUse);
+
+              setSsid(updatedConfig.ssid);
+              setPassphrase(updatedConfig.passphrase);
+              setAlwaysUseStoredCredentials(updatedConfig.always_use_stored_credentials);
             })
           }
           icon={<FaCog />}
-        >Edit WiFi Settings</ButtonItem>
+        >
+          Edit WiFi Settings
+        </ButtonItem>
+
+
       </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem

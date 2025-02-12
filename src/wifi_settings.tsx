@@ -4,18 +4,18 @@ import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { callable, toaster } from "@decky/api";
 
-const settingsSet = callable<[key: string, value: string], boolean>("settings_setSetting");
-const settingsCommit = callable<[], boolean>("settings_commit");
 
 export const showWifiSettingsModal = (
   currentSsid: string,
   currentPassphrase: string,
-  onSave: (ssid: string, passphrase: string) => void
+  alwaysUseStoredCredentials: boolean,
+  onSave: (ssid: string, passphrase: string, alwaysUse: boolean) => void
 ) => {
   showModal(
     <WifiSettingsModal
       currentSsid={currentSsid}
       currentPassphrase={currentPassphrase}
+      alwaysUseStoredCredentials={alwaysUseStoredCredentials}
       onSave={onSave}
     />,
     undefined,
@@ -26,16 +26,19 @@ export const showWifiSettingsModal = (
 const WifiSettingsModal = ({
   currentSsid,
   currentPassphrase,
+  alwaysUseStoredCredentials,
   onSave,
   closeModal,
 }: {
   currentSsid: string;
   currentPassphrase: string;
-  onSave: (ssid: string, passphrase: string) => void;
+  alwaysUseStoredCredentials: boolean;
+  onSave: (ssid: string, passphrase: string, alwaysUse: boolean) => void;
   closeModal?: () => void;
 }) => {
   const [newSsid, setNewSsid] = useState(currentSsid);
   const [newPassphrase, setNewPassphrase] = useState(currentPassphrase);
+  const [alwaysUse, setAlwaysUse] = useState(alwaysUseStoredCredentials);
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
@@ -43,23 +46,26 @@ const WifiSettingsModal = ({
       setError("Password must be between 8 and 63 characters.");
       return;
     }
-
+  
+    setError(null); // Clear previous errors if any
+  
     try {
-      await settingsSet("ssid", newSsid);
-      await settingsSet("passphrase", newPassphrase);
-      const success = await settingsCommit();
-
-      if (success) {
-        toaster.toast({ title: "Settings Saved", body: "SSID and Passphrase updated successfully." });
-        onSave(newSsid, newPassphrase);
-        closeModal?.();
-      } else {
-        toaster.toast({ title: "Error", body: "Failed to save settings." });
-      }
+      // Call update_credentials and get the updated values
+      const updatedConfig = await callable<[string, string, boolean], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>(
+        "update_credentials"
+      )(newSsid, newPassphrase, alwaysUse);
+  
+      // Update UI with the latest values
+      onSave(updatedConfig.ssid, updatedConfig.passphrase, updatedConfig.always_use_stored_credentials);
+      closeModal?.();
     } catch (error) {
+      setError("Could not save settings.");
       toaster.toast({ title: "Error", body: "Could not save settings." });
     }
   };
+  
+  
+  
 
   return (
     <ModalRoot>
@@ -72,6 +78,16 @@ const WifiSettingsModal = ({
           value={newPassphrase}
           onChange={(e) => setNewPassphrase(e.target.value)}
         />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <label>
+          <input
+            type="checkbox"
+            checked={alwaysUse}
+            onChange={() => setAlwaysUse(!alwaysUse)}
+          />
+          Always use these credentials
+        </label>
       </PanelSectionRow>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <PanelSectionRow>
