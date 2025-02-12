@@ -204,7 +204,7 @@ class Plugin:
 
     async def generate_dnsmasq_config(self, dnsmasq_config, wifi_interface, dhcp_range, ip_address, dnsmasq_log="/var/log/dnsmasq.log"):
         """Generate a fresh dnsmasq configuration file."""
-        decky.logger.info(f"📝 Generating dnsmasq config at {dnsmasq_config}...")
+        decky.logger.info(f"Generating dnsmasq config at {dnsmasq_config}...")
 
         config_content = f"""
 interface={wifi_interface}
