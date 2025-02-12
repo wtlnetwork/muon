@@ -55,7 +55,7 @@ class Plugin:
                 self.ssid = await self.get_hostname()
                 self.passphrase = self.generate_random_password()
 
-        decky.logger.info(f"✅ Settings initialized: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
+        decky.logger.info(f"Settings initialized: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
 
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
 
@@ -65,8 +65,8 @@ class Plugin:
     async def _main(self):
         decky.logger.info("Hotspot Plugin Loaded")
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
-        self.settings.read()  # ✅ No await needed
-        await self.load_settings()  # ✅ Properly awaited
+        self.settings.read()
+        await self.load_settings()
 
 
 
@@ -85,7 +85,7 @@ class Plugin:
         always_use = self.settings.getSetting("always_use_stored_credentials", "false")
 
         if not ssid or not passphrase:
-            await self.load_settings()  # ✅ Now properly awaited
+            await self.load_settings()
             ssid = self.settings.getSetting("ssid")
             passphrase = self.settings.getSetting("passphrase")
             always_use = self.settings.getSetting("always_use_stored_credentials", "false")
@@ -108,12 +108,12 @@ class Plugin:
     async def settings_setSetting(self, key: str, value):
         """Set and save a setting value."""
         if not value:
-            decky.logger.error(f"❌ Attempted to save empty value for {key}, skipping.")
+            decky.logger.error(f"Attempted to save empty value for {key}, skipping.")
             return False
 
         decky.logger.info(f"Setting {key} to {value}")
         self.settings.setSetting(key, value)
-        self.settings.commit()  # Ensure changes are written immediately
+        self.settings.commit()
         return True
 
     async def run_command(self, command: str, check: bool = False):
@@ -128,14 +128,13 @@ class Plugin:
         decky.logger.info("Starting Hotspot")
 
         try:
-            # Use instance variables instead of pulling settings dynamically
             ssid = self.ssid
             passphrase = self.passphrase
 
             decky.logger.info(f"🔹 Using SSID: {ssid}, Passphrase: {passphrase} (Always Use: {self.always_use_stored_credentials})")
 
             if not ssid or not passphrase:
-                decky.logger.error("❌ SSID or Passphrase is missing! Aborting.")
+                decky.logger.error("SSID or Passphrase is missing! Aborting.")
                 return False
 
             await self.check_dependencies()
@@ -164,7 +163,7 @@ class Plugin:
 
     async def update_credentials(self, new_ssid, new_passphrase, always_use):
         """Updates SSID and passphrase, storing to JSON only if always_use_stored_credentials is enabled."""
-        self.ssid = new_ssid  # ✅ Ensure instance variables update
+        self.ssid = new_ssid
         self.passphrase = new_passphrase
         self.always_use_stored_credentials = always_use
 
@@ -179,7 +178,6 @@ class Plugin:
 
         decky.logger.info(f"🔄 Updated credentials: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
 
-        # ✅ Return the updated values to the frontend
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
 
 
@@ -188,9 +186,9 @@ class Plugin:
         for dep in ["dnsmasq", "hostapd"]:
             result = await self.run_command(f"which {dep}")
             if not result:
-                decky.logger.error(f"❌ ERROR: `{dep}` is not installed.")
+                decky.logger.error(f"ERROR: `{dep}` is not installed.")
                 raise Exception(f"{dep} is missing.")
-        decky.logger.info("✅ All dependencies are installed.")
+        decky.logger.info("All dependencies are installed.")
 
     async def ensure_wlan0_up(self):
         """Ensure the wlan0 interface is available and up."""
@@ -198,10 +196,10 @@ class Plugin:
         result = await self.run_command("ip link show wlan0")
         decky.logger.info(f"wlan0 status: {result}")
         if "state DOWN" in result:
-            decky.logger.info("⚠️ wlan0 is down. Bringing it up...")
+            decky.logger.info("wlan0 is down. Bringing it up...")
             await self.run_command("sudo ip link set wlan0 up")
         elif "state UNKNOWN" in result:
-            decky.logger.error("❌ wlan0 interface not found. Check your WiFi adapter.")
+            decky.logger.error("wlan0 interface not found. Check your WiFi adapter.")
             raise Exception("wlan0 interface not found.")
 
     async def generate_dnsmasq_config(self, dnsmasq_config, wifi_interface, dhcp_range, ip_address, dnsmasq_log="/var/log/dnsmasq.log"):
@@ -222,9 +220,9 @@ log-facility={dnsmasq_log}  # Save logs here
         try:
             with open(dnsmasq_config, "w") as f:
                 f.write(config_content)
-            decky.logger.info("✅ dnsmasq config generated successfully.")
+            decky.logger.info("dnsmasq config generated successfully.")
         except Exception as e:
-            decky.logger.error(f"❌ Failed to generate dnsmasq config: {str(e)}")
+            decky.logger.error(f"Failed to generate dnsmasq config: {str(e)}")
 
     async def generate_hostapd_config(self, hostapd_config, wifi_interface, ssid, passphrase, channel=6, country_code="US"):
         """Generate a fresh hostapd configuration file."""
@@ -261,14 +259,14 @@ disassoc_low_ack=0
             decky.logger.error(f"❌ Failed to generate hostapd config: {str(e)}")
 
 
-    async def check_dnsmasq(self, wifi_interface, dhcp_range, ip_address):
+    async def check_dnsmasq(self):
         """Verify dnsmasq is running."""
         decky.logger.info("🔍 Checking if dnsmasq is running...")
         output = await self.run_command("pgrep -a dnsmasq")
 
         if not output:
             decky.logger.error("❌ dnsmasq is NOT running! Restarting...")
-            await self.start_dhcp_server(wifi_interface, dhcp_range, ip_address)
+            await self.start_dhcp_server()
         else:
             decky.logger.info("✅ dnsmasq is running correctly.")
 
@@ -309,32 +307,32 @@ disassoc_low_ack=0
         firewalld_status = await self.run_command("sudo systemctl is-active firewalld")
         decky.logger.info(f"Firewalld status: {firewalld_status}")
         if firewalld_status != "active":
-            decky.logger.warning("⚠️ Firewalld is not active. Skipping DHCP rule addition.")
+            decky.logger.warning("Firewalld is not active. Skipping DHCP rule addition.")
             return False
 
         active_zone = await self.run_command("sudo firewall-cmd --get-active-zones | awk 'NR==1{print $1}'")
         if not active_zone:
-            decky.logger.error("❌ Could not determine the active firewalld zone.")
+            decky.logger.error("Could not determine the active firewalld zone.")
             return False
 
-        decky.logger.info(f"✅ Firewalld is active. Using zone: {active_zone}")
+        decky.logger.info(f"Firewalld is active. Using zone: {active_zone}")
 
         error = await self.run_command(f"sudo firewall-cmd --zone={active_zone} --add-service=dhcp")
         if "success" not in error.lower():
-            decky.logger.error(f"❌ Failed to add DHCP service: {error}")
+            decky.logger.error(f"Failed to add DHCP service: {error}")
             return False
 
         error = await self.run_command("sudo firewall-cmd --reload")
         if "success" not in error.lower():
-            decky.logger.error(f"❌ Failed to reload firewalld: {error}")
+            decky.logger.error(f"Failed to reload firewalld: {error}")
             return False
 
-        decky.logger.info(f"🚀 DHCP service allowed in firewalld (zone: {active_zone}).")
+        decky.logger.info(f"DHCP service allowed in firewalld (zone: {active_zone}).")
         return True
 
     async def capture_original_network_config(self):
         """Backup existing IP, gateway, DNS, and WiFi connection."""
-        decky.logger.info("📡 Capturing current network settings...")
+        decky.logger.info("Capturing current network settings...")
         self.original_ip = await self.extract_ip()
         self.original_gateway = await self.extract_gateway()
         self.original_dns = await self.extract_dns()
@@ -342,13 +340,13 @@ disassoc_low_ack=0
 
     async def restore_network_config(self):
         """Restore original network settings."""
-        decky.logger.info("🔄 Restoring original network settings...")
+        decky.logger.info("Restoring original network settings...")
 
-        decky.logger.info("🛑 Stopping hostapd and dnsmasq...")
+        decky.logger.info("Stopping hostapd and dnsmasq...")
         await self.run_command("sudo systemctl stop hostapd", check=False)
         await self.run_command("sudo pkill dnsmasq", check=False)
 
-        decky.logger.info("🔄 Resetting wlan0 to managed mode...")
+        decky.logger.info("Resetting wlan0 to managed mode...")
         await self.run_command("sudo ip link set wlan0 down", check=False)
         await self.run_command("sudo iw dev wlan0 set type managed", check=False)
         await self.run_command("sudo ip link set wlan0 up", check=False)
@@ -357,42 +355,44 @@ disassoc_low_ack=0
         await self.run_command(f"sudo ip addr flush dev wlan0", check=False)
 
         if self.original_ip:
-            decky.logger.info(f"🌍 Restoring original IP: {self.original_ip}...")
+            decky.logger.info(f"Restoring original IP: {self.original_ip}...")
             await self.run_command(f"sudo ip addr add {self.original_ip}/24 dev wlan0", check=False)
 
         if self.original_gateway:
-            decky.logger.info(f"🌍 Restoring original Gateway: {self.original_gateway}...")
+            decky.logger.info(f"Restoring original Gateway: {self.original_gateway}...")
             await self.run_command(f"sudo ip route add default via {self.original_gateway}", check=False)
 
         if self.original_dns:
-            decky.logger.info(f"🌍 Restoring original DNS: {', '.join(self.original_dns)}...")
+            decky.logger.info(f"Restoring original DNS: {', '.join(self.original_dns)}...")
             await self.set_dns_servers(self.original_dns)
 
         await self.restart_network_services()
-        decky.logger.info("✅ Network configuration restored successfully.")
+        decky.logger.info("Network configuration restored successfully.")
 
     async def configure_ip(self):
         """Ensure wlan0 gets the correct static IP and keeps it assigned."""
-        decky.logger.info("🧹 Flushing any existing IP configuration...")
+        decky.logger.info("Flushing any existing IP configuration...")
         await self.run_command(f"sudo ip addr flush dev {self.wifi_interface}", check=False)
 
-        decky.logger.info(f"🌍 Setting static IP {self.ip_address} on {self.wifi_interface}...")
-        await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}", check=True)
-        await asyncio.sleep(1)  # Small delay
-        await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}", check=False)
+        """Sets a static IP for the hotspot, ensuring it is not already assigned."""
+        decky.logger.info(f"Setting static IP {self.ip_address} on {self.wifi_interface}...")
 
-        ip_check = await self.run_command(f"ip addr show {self.wifi_interface}")
-        if self.ip_address not in ip_check:
-            decky.logger.error(f"❌ wlan0 does NOT have the correct IP ({self.ip_address}). Retrying...")
-            await asyncio.sleep(1)
-            await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}", check=True)
+        # Check if the IP is already assigned
+        existing_ip = await self.run_command(f"ip addr show {self.wifi_interface} | grep {self.ip_address}", check=False)
 
-        ip_check = await self.run_command(f"ip addr show {self.wifi_interface}")
-        if self.ip_address not in ip_check:
-            decky.logger.error(f"❌ wlan0 is still missing {self.ip_address}. Something is wrong!")
-            raise Exception(f"Failed to set static IP {self.ip_address} on {self.wifi_interface}")
+        if existing_ip.strip():
+            decky.logger.info(f"IP {self.ip_address} is already assigned to {self.wifi_interface}. Skipping re-assignment.")
         else:
-            decky.logger.info(f"✅ wlan0 successfully set to {self.ip_address}")
+            await self.run_command(f"sudo ip addr add {self.ip_address}/24 dev {self.wifi_interface}", check=True)
+            await asyncio.sleep(1)  # Small delay
+
+        # Ensure IP is assigned
+        final_ip_check = await self.run_command(f"ip addr show {self.wifi_interface} | grep {self.ip_address}", check=False)
+        if not final_ip_check.strip():
+            decky.logger.error(f"Failed to assign IP {self.ip_address} to {self.wifi_interface}.")
+        else:
+            decky.logger.info(f"Successfully assigned IP {self.ip_address} to {self.wifi_interface}.")
+
 
     async def start_wifi_ap(self, ssid, passphrase):
         """Start WiFi Access Point."""
@@ -405,26 +405,26 @@ disassoc_low_ack=0
             decky.logger.info("🗑️ Removing old hostapd config...")
             os.remove("/etc/hostapd/hostapd.conf")
 
-        decky.logger.info("📝 Generating new hostapd config...")
+        decky.logger.info("Generating new hostapd config...")
         await self.generate_hostapd_config("/etc/hostapd/hostapd.conf", self.wifi_interface, ssid, passphrase)
-
-        decky.logger.info(f"🚀 Starting WiFi Access Point: SSID={ssid}")
+        await self.allow_dhcp_firewalld()
+        decky.logger.info(f"Starting WiFi Access Point: SSID={ssid}")
         await self.run_command("sudo systemctl restart hostapd", check=True)
 
     async def start_dhcp_server(self):
         """Start the DHCP server using a fresh dnsmasq config."""
         dnsmasq_config = "/tmp/dnsmasq-hotspot.conf"
         if os.path.exists(dnsmasq_config):
-            decky.logger.info(f"🗑️ Removing old dnsmasq config at {dnsmasq_config}...")
+            decky.logger.info(f"Removing old dnsmasq config at {dnsmasq_config}...")
             os.remove(dnsmasq_config)
 
-        decky.logger.info("📝 Generating new dnsmasq config...")
+        decky.logger.info("Generating new dnsmasq config...")
         await self.generate_dnsmasq_config(dnsmasq_config, self.wifi_interface, self.dhcp_range, self.ip_address)
 
-        decky.logger.info("🛠️ Stopping any existing dnsmasq instances...")
+        decky.logger.info("Stopping any existing dnsmasq instances...")
         await self.run_command("sudo pkill dnsmasq", check=False)
 
-        decky.logger.info("🚀 Starting dnsmasq...")
+        decky.logger.info("Starting dnsmasq...")
         await self.run_command(f"sudo dnsmasq -C {dnsmasq_config} 2>&1 &", check=False)
 
         await asyncio.sleep(2)
@@ -462,11 +462,11 @@ disassoc_low_ack=0
         dns_config = "\n".join([f"nameserver {dns}" for dns in dns_list])
         with open("/etc/resolv.conf", "w") as f:
             f.write(dns_config)
-        decky.logger.info("✅ DNS servers updated successfully.")
+        decky.logger.info("DNS servers updated successfully.")
 
     async def restart_network_services(self):
         """Restart previously active network services."""
-        decky.logger.info("🔄 Restarting network services...")
+        decky.logger.info("Restarting network services...")
         await self.run_command("sudo systemctl restart NetworkManager")
         await self.run_command("sudo systemctl restart iwd")
-        decky.logger.info("✅ Network services restarted successfully.")
+        decky.logger.info("Network services restarted successfully.")
