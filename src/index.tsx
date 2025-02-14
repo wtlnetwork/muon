@@ -19,6 +19,7 @@ const stopHotspot = callable<[], void>("stop_hotspot");
 const checkDependencies = callable<[], Record<string, boolean>>("check_dependencies");
 const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
+const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
 
 function Content() {
   const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
@@ -26,6 +27,7 @@ function Content() {
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
   const [dependencies, setDependencies] = useState<Record<string, boolean> | null>(null);
+  const [installingDependencies, setInstallingDependencies] = useState(false);
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -52,11 +54,12 @@ function Content() {
         setPassphrase(finalPassphrase);
         setAlwaysUseStoredCredentials(alwaysUse);
   
+        // Always recheck dependencies
         const deps = await checkDependencies();
         setDependencies(deps);
+  
         const hotspotActive = await isHotspotActive();
         setHotspotStatus(hotspotActive ? "stop" : "start");
-
       } catch (error) {
         toaster.toast({ title: "Error", body: "Failed to initialize settings." });
         console.error("Failed to initialize settings:", error);
@@ -64,7 +67,7 @@ function Content() {
     };
   
     initializeSettings();
-  }, []);
+  }, [dependencies]); // <=== Ensure re-run when dependencies update  
   
   
 
@@ -92,32 +95,55 @@ function Content() {
   };
 
   if (dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"])) {
+    const missingDnsmasq = !dependencies["dnsmasq"];
+    const missingHostapd = !dependencies["hostapd"];
+  
     return (
       <PanelSection title="Missing Dependencies">
         <PanelSectionRow>
           <p>
             The following required packages are missing:
-            {!dependencies["dnsmasq"] && <b> dnsmasq</b>}
-            {!dependencies["hostapd"] && <b> hostapd</b>}
-            . Please install them by running the following commands in a terminal:
+            {missingDnsmasq && <b> dnsmasq</b>}
+            {missingHostapd && <b> hostapd</b>}
+            . You can install them automatically:
           </p>
         </PanelSectionRow>
         <PanelSectionRow>
-          <code>sudo steamos-readonly disable</code>
+          <ButtonItem
+            layout="inline"
+            disabled={installingDependencies}
+            onClick={async () => {
+              setInstallingDependencies(true);
+              toaster.toast({ title: "Installing Dependencies", body: "Please wait..." });
+  
+              const result = await installDependencies(missingDnsmasq, missingHostapd);
+              if (result.success) {
+                toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
+  
+                // Recheck dependencies after installation
+                const updatedDeps = await checkDependencies();
+                setDependencies({ ...updatedDeps });
+              } else {
+                toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
+              }
+  
+              setInstallingDependencies(false);
+            }}
+          >
+            {installingDependencies ? (
+              <>
+                <FaSpinner className="animate-spin" /> Installing...
+              </>
+            ) : (
+              "Install Missing Dependencies"
+            )}
+          </ButtonItem>
         </PanelSectionRow>
-        {!dependencies["dnsmasq"] && (
-          <PanelSectionRow>
-            <code>sudo pacman -Sy --noconfirm dnsmasq</code>
-          </PanelSectionRow>
-        )}
-        {!dependencies["hostapd"] && (
-          <PanelSectionRow>
-            <code>sudo pacman -Sy --noconfirm hostapd</code>
-          </PanelSectionRow>
-        )}
       </PanelSection>
     );
   }
+  
+  
 
   return (
     <PanelSection title="Hotspot Configuration">

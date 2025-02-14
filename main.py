@@ -205,6 +205,36 @@ class Plugin:
         decky.logger.info("Dependency statuses: " + str(statuses))
         return statuses
 
+    async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
+        """Installs dnsmasq and hostapd selectively based on missing dependencies."""
+        try:
+            commands = ["sudo steamos-readonly disable"]
+            
+            if install_dnsmasq:
+                commands.append("sudo pacman -Sy --noconfirm dnsmasq")
+            if install_hostapd:
+                commands.append("sudo pacman -Sy --noconfirm hostapd")
+            
+            if len(commands) == 1:
+                return {"success": False, "error": "No missing dependencies to install."}
+
+            for cmd in commands:
+                process = await asyncio.create_subprocess_shell(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = await process.communicate()
+                
+                if process.returncode != 0:
+                    decky.logger.error(f"Error running command `{cmd}`: {stderr.decode().strip()}")
+                    return {"success": False, "error": stderr.decode().strip()}
+
+            decky.logger.info("Dependencies installed successfully.")
+            return {"success": True}
+        except Exception as e:
+            decky.logger.error(f"Failed to install dependencies: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+
     async def ensure_wlan0_up(self):
         """Ensure the wlan0 interface is available and up."""
         decky.logger.info("Checking wlan0 status...")
