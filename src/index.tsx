@@ -37,7 +37,6 @@ function Content() {
   useEffect(() => {
     const initializeSettings = async () => {
       try {
-        // Call load_settings instead of settingsRead
         const storedConfig = await callable<[], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>("load_settings")();
         let alwaysUse = storedConfig.always_use_stored_credentials;
         let finalSsid = storedConfig.ssid;
@@ -54,7 +53,7 @@ function Content() {
         setPassphrase(finalPassphrase);
         setAlwaysUseStoredCredentials(alwaysUse);
   
-        // Always recheck dependencies
+        // Fetch dependencies when the effect runs
         const deps = await checkDependencies();
         setDependencies(deps);
   
@@ -67,7 +66,7 @@ function Content() {
     };
   
     initializeSettings();
-  }, [dependencies]); // <=== Ensure re-run when dependencies update  
+  }, []);
   
   
 
@@ -76,8 +75,9 @@ function Content() {
       toaster.toast({ title: "Error", body: "Password must be between 8 and 63 characters." });
       return;
     }
-
+  
     setHotspotStatus("loading");
+  
     try {
       if (hotspotStatus === "start") {
         await startHotspot();
@@ -90,9 +90,14 @@ function Content() {
       }
     } catch (error) {
       toaster.toast({ title: "Error", body: "Failed to toggle hotspot." });
-      setHotspotStatus(hotspotStatus === "start" ? "start" : "stop");
+    } finally {
+      // Ensure we check the current status before re-enabling the button
+      const hotspotActive = await isHotspotActive();
+      setHotspotStatus(hotspotActive ? "stop" : "start");
     }
   };
+  
+  
 
   if (dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"])) {
     const missingDnsmasq = !dependencies["dnsmasq"];
@@ -120,9 +125,11 @@ function Content() {
               if (result.success) {
                 toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
   
-                // Recheck dependencies after installation
                 const updatedDeps = await checkDependencies();
-                setDependencies({ ...updatedDeps });
+                setDependencies(updatedDeps);
+  
+                const hotspotActive = await isHotspotActive();
+                setHotspotStatus(hotspotActive ? "stop" : "start");
               } else {
                 toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
               }
@@ -141,10 +148,8 @@ function Content() {
         </PanelSectionRow>
       </PanelSection>
     );
-  }
+  }  
   
-  
-
   return (
     <PanelSection title="Hotspot Configuration">
       <PanelSectionRow>
