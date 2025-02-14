@@ -16,7 +16,7 @@ import { showWifiSettingsModal } from "./wifi_settings";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
-const checkDependencies = callable<[], boolean>("check_dependencies");
+const checkDependencies = callable<[], Record<string, boolean>>("check_dependencies");
 const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 
@@ -25,7 +25,7 @@ function Content() {
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
-  const [dependenciesOk, setDependenciesOk] = useState<boolean | null>(null);
+  const [dependencies, setDependencies] = useState<Record<string, boolean> | null>(null);
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -52,8 +52,8 @@ function Content() {
         setPassphrase(finalPassphrase);
         setAlwaysUseStoredCredentials(alwaysUse);
   
-        const depsOk = await checkDependencies();
-        setDependenciesOk(depsOk);
+        const deps = await checkDependencies();
+        setDependencies(deps);
         const hotspotActive = await isHotspotActive();
         setHotspotStatus(hotspotActive ? "stop" : "start");
 
@@ -91,20 +91,30 @@ function Content() {
     }
   };
 
-  if (dependenciesOk === false) {
+  if (dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"])) {
     return (
       <PanelSection title="Missing Dependencies">
         <PanelSectionRow>
           <p>
-            The required packages <b>dnsmasq</b> and <b>hostapd</b> are missing. Please install them by running the following commands in a terminal:
+            The following required packages are missing:
+            {!dependencies["dnsmasq"] && <b> dnsmasq</b>}
+            {!dependencies["hostapd"] && <b> hostapd</b>}
+            . Please install them by running the following commands in a terminal:
           </p>
         </PanelSectionRow>
         <PanelSectionRow>
           <code>sudo steamos-readonly disable</code>
         </PanelSectionRow>
-        <PanelSectionRow>
-          <code>sudo pacman -Sy --noconfirm dnsmasq hostapd</code>
-        </PanelSectionRow>
+        {!dependencies["dnsmasq"] && (
+          <PanelSectionRow>
+            <code>sudo pacman -Sy --noconfirm dnsmasq</code>
+          </PanelSectionRow>
+        )}
+        {!dependencies["hostapd"] && (
+          <PanelSectionRow>
+            <code>sudo pacman -Sy --noconfirm hostapd</code>
+          </PanelSectionRow>
+        )}
       </PanelSection>
     );
   }

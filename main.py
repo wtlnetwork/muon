@@ -196,12 +196,14 @@ class Plugin:
 
     async def check_dependencies(self):
         """Ensure required dependencies are installed."""
+        statuses = {}
         for dep in ["dnsmasq", "hostapd"]:
             result = await self.run_command(f"which {dep}")
+            statuses[dep] = bool(result)
             if not result:
                 decky.logger.error(f"ERROR: `{dep}` is not installed.")
-                raise Exception(f"{dep} is missing.")
-        decky.logger.info("All dependencies are installed.")
+        decky.logger.info("Dependency statuses: " + str(statuses))
+        return statuses
 
     async def ensure_wlan0_up(self):
         """Ensure the wlan0 interface is available and up."""
