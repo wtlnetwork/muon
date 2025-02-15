@@ -28,6 +28,7 @@ function Content() {
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
   const [dependencies, setDependencies] = useState<Record<string, boolean> | null>(null);
   const [installingDependencies, setInstallingDependencies] = useState(false);
+  const [isBlocked, setIsBlocked] = useState<boolean>(false);
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -59,6 +60,10 @@ function Content() {
   
         const hotspotActive = await isHotspotActive();
         setHotspotStatus(hotspotActive ? "stop" : "start");
+
+        const rfkillBlocked = await callable<[], boolean>("is_rfkill_blocking_wlan")();
+        setIsBlocked(rfkillBlocked);
+
       } catch (error) {
         toaster.toast({ title: "Error", body: "Failed to initialize settings." });
         console.error("Failed to initialize settings:", error);
@@ -183,7 +188,7 @@ function Content() {
 
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem layout="inline" onClick={handleClick} disabled={hotspotStatus === "loading"}>
+        <ButtonItem layout="inline" onClick={handleClick} disabled={hotspotStatus === "loading" || isBlocked}>
           {hotspotStatus === "loading" ? (
             <>
               <FaSpinner className="animate-spin" /> Working...
@@ -199,6 +204,12 @@ function Content() {
           )}
         </ButtonItem>
       </PanelSectionRow>
+
+      {isBlocked && (
+        <PanelSectionRow>
+          <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
+        </PanelSectionRow>
+      )}
     </PanelSection>
   );
 };

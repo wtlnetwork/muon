@@ -29,6 +29,33 @@ class Plugin:
             decky.logger.error(f"Error checking hotspot status: {e}")
             return False
 
+    async def is_rfkill_blocking_wlan(self):
+        """Checks if rfkill is blocking the Wireless LAN device using run_command."""
+        try:
+            rfkill_output = await self.run_command("rfkill list")
+
+            if not rfkill_output:
+                decky.logger.error("rfkill command returned empty output.")
+                return False  # Default to not blocked
+
+            # Find Wireless LAN device
+            in_wlan_section = False
+            for line in rfkill_output.splitlines():
+                line = line.strip()
+                if "Wireless LAN" in line:
+                    in_wlan_section = True
+                elif in_wlan_section:
+                    if "Soft blocked: yes" in line or "Hard blocked: yes" in line:
+                        return True  # WLAN is blocked
+                    if line.startswith("0:") or line.startswith("1:"):  # Next device section
+                        break  # Stop checking after Wireless LAN section
+            
+            return False  # Not blocked
+
+        except Exception as e:
+            decky.logger.error(f"Error checking rfkill: {e}")
+            return False  # Default to not blocked if there's an error
+
     async def load_settings(self):
         """Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend."""
         always_use = self.settings.getSetting("always_use_stored_credentials", None)
