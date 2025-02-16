@@ -370,8 +370,8 @@ disassoc_low_ack=0
     def generate_random_password(self):
         """Generates a secure 8-character password."""
         import random
-        # Randomly select eight characters from the charset variable and return them. Letters and numbers have been chosen to be unambiguous
-        charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+        # Randomly select eight characters from the charset variable and return them. Letters, numbers and symbols have been chosen to be unambiguous
+        charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ0123456789!@#$%^&*_-"
         return ''.join(random.choice(charset) for _ in range(8))
 
     async def capture_service_states(self):
