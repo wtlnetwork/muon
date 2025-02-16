@@ -27,9 +27,9 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 
 **List of Options Include:**
 
-* Random host password generation
-* Option to change hostname for the Steam Deck
-* Option for credentials being remembered for trusted devices
+* Random password generation for host per restart
+* Option to change hostname and password for the Steam Deck
+* Option for credentials being remembered. 
 
 **[BE UP-TO-DATE WITH THE NEWEST RELEASES!](https://github.com/wtlnetwork/muon/releases)**
 
@@ -47,9 +47,10 @@ __Don't have a lot of LAN games in your library? Maybe you'll find a new gem amo
 
 ## Planned Updates:
 
+* Remote Play Together Functionality
 * Steam Deck OLED Support
 * Advanced Settings Tab for Host
-* Remote Play Together Functionality
+
 
 
 
