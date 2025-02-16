@@ -5,8 +5,6 @@ import subprocess
 import re
 import socket
 from settings import SettingsManager
-from decky_plugin import logger
-from decky_frontend_lib import ButtonItem, Router
 
 class Plugin:
     def __init__(self):
@@ -193,14 +191,6 @@ class Plugin:
             decky.logger.info(f"Using WLAN IP address: {self.wlan_ip}")
         except Exception as e:
             decky.logger.error(f"Failed to start hotspot: {str(e)}")
-
-    # Stop hotspot button color change
-    async def change_button_color(self):
-        custom_button = ButtonItem("stop hotspot")
-        label="Custom Color Button",
-        onClick=lambda: logger.info("Button clicked!"),
-        focusColor="#FF521210",
-        onFocus=lambda: logger.info("Button focused!")
 
     async def stop_hotspot(self):
         decky.logger.info("Stopping Hotspot")
