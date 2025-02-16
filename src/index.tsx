@@ -4,6 +4,7 @@ import {
   PanelSectionRow,
   TextField,
   staticClasses
+  ColorPickerModal
 } from "@decky/ui";
 import {
   callable,
@@ -200,6 +201,15 @@ function Content() {
           ) : (
             <>
               <FaWifi /> Stop Hotspot
+            <>
+            .ColorPicker_HSlider .${gamepadSliderClasses.SliderTrack} {
+          background: linear-gradient(
+            270deg,
+            hsla(360, var(--decky-color-picker-svalue), var(--decky-color-picker-lvalue), var(--decky-color-picker-avalue)),
+            hsla(270, var(--decky-color-picker-svalue), var(--decky-color-picker-lvalue), var(--decky-color-picker-avalue)),
+            hsla(180, var(--decky-color-picker-svalue), var(--decky-color-picker-lvalue), var(--decky-color-picker-avalue)),
+            hsla(90, var(--decky-color-picker-svalue), var(--decky-color-picker-lvalue), var(--decky-color-picker-avalue)),
+            hsla(0, var(--decky-color-picker-svalue), var(--decky-color-picker-lvalue), var(--decky-color-picker-avalue))
             </>
           )}
         </ButtonItem>
