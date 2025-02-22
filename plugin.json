@@ -4,7 +4,7 @@
   "flags": ["debug", "root"],
   "api_version": 1,
   "publish": {
-    "tags": ["adhoc", "wifi", "p2p", "multiplayer", "root", "LAN", "WLAN", "local", "offline"],
+    "tags": ["adhoc", "wifi", "p2p", "multiplayer", "root"],
     "description": "Ad-hoc networking plugin for Decky.",
     "image": "https://i.imgur.com/14ATz7J.png"
   }
