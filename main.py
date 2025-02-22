@@ -304,7 +304,7 @@ dhcp-option=6,1.1.1.1,8.8.8.8  # DNS for clients
 port=0  # Disable DNS serving
 log-dhcp
 log-facility={dnsmasq_log}  # Save logs here
-broadcast-dhcp=1
+dhcp-broadcast
 """
 
         # Write the dnsmasq config to a file.
