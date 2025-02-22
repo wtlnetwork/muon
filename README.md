@@ -49,7 +49,6 @@ __Don't have a lot of LAN games in your library? Maybe you'll find a new gem amo
 
 * Steam Deck OLED Support
 * Advanced Settings Tab for Host
-* Remote Play Together Functionality
 
 
 
