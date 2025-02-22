@@ -177,6 +177,7 @@ class Plugin:
 
             await self.check_dependencies()
             await self.allow_dhcp_firewalld()
+            await self.allow_broadcast_firewalld()
             await self.ensure_wlan0_up()
             await self.capture_original_network_config()
             await self.capture_service_states()
@@ -303,6 +304,7 @@ dhcp-option=6,1.1.1.1,8.8.8.8  # DNS for clients
 port=0  # Disable DNS serving
 log-dhcp
 log-facility={dnsmasq_log}  # Save logs here
+broadcast-dhcp=1
 """
 
         # Write the dnsmasq config to a file.
@@ -399,6 +401,17 @@ disassoc_low_ack=0
         await self.run_command("sudo systemctl stop NetworkManager", check=False)
         await self.run_command("sudo systemctl stop iwd", check=False)
         decky.logger.info("Network services stopped.")
+
+    async def allow_broadcast_firewalld(self):
+        """Allow broadcast traffic through firewalld for server discovery."""
+        decky.logger.info("Allowing broadcast traffic through firewalld...")
+
+        # Allow broadcast to 255.255.255.255
+        await self.run_command('sudo firewall-cmd --zone=public --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept" --permanent')
+        await self.run_command('sudo firewall-cmd --zone=public --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept" --permanent')
+
+        # Allow UDP broadcasts from local subnet
+        await self.run_command('sudo firewall-cmd --zone=public --add-rich-rule="rule family=ipv4 source address=192.168.8.0/24 protocol value=udp accept" --permanent')
 
     async def allow_dhcp_firewalld(self):
         """Allow DHCP traffic through firewalld for the correct zone and make it persistent."""
