@@ -1,6 +1,6 @@
 {
   "name": "muon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ad-hoc networking plugin for Decky.",
   "type": "module",
   "scripts": {
