@@ -29,6 +29,7 @@ class Plugin:
             await self.stop_hotspot()
         decky.logger.info("Plugin Unloaded")
 
+    # Check if the hotspot is currently running
     async def is_hotspot_active(self) -> bool:
         """Checks if the hostapd service is running."""
         try:
@@ -40,6 +41,7 @@ class Plugin:
             decky.logger.error(f"Error checking hotspot status: {e}")
             return False
 
+    # Check if the WiFi has been disabled
     async def is_rfkill_blocking_wlan(self):
         """Checks if rfkill is blocking the Wireless LAN device using run_command."""
         try:
@@ -69,43 +71,30 @@ class Plugin:
 
     async def load_settings(self):
         """Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend."""
-        always_use = self.settings.getSetting("always_use_stored_credentials", None)
-
-        # Explicitly set default if not found
-        if always_use is None:
-            always_use = "false"
-            self.settings.setSetting("always_use_stored_credentials", always_use)
-            self.settings.commit()
-
+        always_use = self.settings.getSetting("always_use_stored_credentials", "false")
         self.always_use_stored_credentials = always_use == "true"
 
-        # Keep current SSID and passphrase if they exist (session persistence)
-        if not hasattr(self, "ssid") or not hasattr(self, "passphrase"):
-            self.ssid = None
-            self.passphrase = None
+        # Check session persistence
+        if not (self.ssid and self.passphrase):
+            stored_ssid = self.settings.getSetting("ssid", None)
+            stored_passphrase = self.settings.getSetting("passphrase", None)
 
-        stored_ssid = self.settings.getSetting("ssid", None)
-        stored_passphrase = self.settings.getSetting("passphrase", None)
+            if self.always_use_stored_credentials:
+                # Use stored credentials, create failsafe if missing
+                if not (stored_ssid and stored_passphrase):
+                    decky.logger.warning("[Settings] Stored credentials missing! Generating failsafe.")
+                    stored_ssid = await self.get_hostname()
+                    stored_passphrase = self.generate_random_password()
+                    self.save_credentials(stored_ssid, stored_passphrase, True)
 
-        if self.always_use_stored_credentials:
-            # Use stored credentials, but create failsafe if missing
-            if not stored_ssid or not stored_passphrase:
-                decky.logger.warning("Stored credentials missing! Generating failsafe credentials.")
-                stored_ssid = await self.get_hostname()
-                stored_passphrase = self.generate_random_password()
-                self.settings.setSetting("ssid", stored_ssid)
-                self.settings.setSetting("passphrase", stored_passphrase)
-                self.settings.commit()
-            self.ssid = stored_ssid
-            self.passphrase = stored_passphrase
-        else:
-            # If session credentials are already set, don't overwrite them
-            if not self.ssid or not self.passphrase:
+                self.ssid = stored_ssid
+                self.passphrase = stored_passphrase
+            else:
+                # Generate new credentials if none are set
                 self.ssid = await self.get_hostname()
                 self.passphrase = self.generate_random_password()
 
-        decky.logger.info(f"Settings initialized: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
-
+        decky.logger.info(f"[Settings] SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUseStored={self.always_use_stored_credentials}")
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
 
     async def settings_read(self):
@@ -123,29 +112,7 @@ class Plugin:
             always_use = self.settings.getSetting("always_use_stored_credentials", "false")
 
         return {"ssid": ssid, "passphrase": passphrase, "always_use_stored_credentials": always_use}
-
-    async def settings_commit(self):
-        """Save settings to storage."""
-        decky.logger.info("Saving hotspot settings...")
-        self.settings.commit()
-        return True
-
-    async def settings_getSetting(self, key: str, default=None):
-        """Retrieve a setting value."""
-        decky.logger.info(f"Fetching setting: {key}")
-        return self.settings.getSetting(key, default)
-
-    async def settings_setSetting(self, key: str, value):
-        """Set and save a setting value."""
-        if not value:
-            decky.logger.error(f"Attempted to save empty value for {key}, skipping.")
-            return False
-
-        decky.logger.info(f"Setting {key} to {value}")
-        self.settings.setSetting(key, value)
-        self.settings.commit()
-        return True
-    
+        
     async def update_credentials(self, new_ssid, new_passphrase, always_use):
         """Updates SSID and passphrase, storing to JSON only if always_use_stored_credentials is enabled."""
         self.ssid = new_ssid
