@@ -118,7 +118,7 @@ class Plugin:
 
                 self.hotspot_active = True
                 decky.logger.info("Hotspot is active")
-                self.wlan_ip = await self.run_command(f"ip addr show {self.wifi_interface} | grep -oP 'inet \K[\d.]+/\d+'")
+                self.wlan_ip = await self.run_command(fr"ip addr show {self.wifi_interface} | grep -oP 'inet \K[\d.]+/\d+'")
                 decky.logger.info(f"Using WLAN IP address: {self.wlan_ip}")
             except Exception as e:
                 decky.logger.error(f"Failed to start hotspot: {str(e)}")
