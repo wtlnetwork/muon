@@ -28,13 +28,13 @@ echo "Using firewalld zone: $ACTIVE_ZONE"
 
 # Allow broadcast traffic and UDP for server discovery
 echo "Allowing broadcast traffic for server discovery..."
-sudo firewall-cmd --zone=$ACTIVE_ZONE --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept" --permanent
-sudo firewall-cmd --zone=$ACTIVE_ZONE --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept" --permanent
-sudo firewall-cmd --zone=$ACTIVE_ZONE --add-rich-rule="rule family=ipv4 source address=${SUBNET}/24 protocol value=udp accept" --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept" --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept" --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 source address=${SUBNET}/24 protocol value=udp accept" --permanent
 
 # Allow DHCP service
 echo "Allowing DHCP traffic..."
-sudo firewall-cmd --zone=$ACTIVE_ZONE --add-service=dhcp --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-service=dhcp --permanent
 
 # Reload firewalld to apply changes
 echo "Reloading firewalld to apply changes..."
