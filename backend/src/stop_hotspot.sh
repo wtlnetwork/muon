@@ -20,7 +20,7 @@ sudo ip link set "$WIFI_INTERFACE" up
 
 # Flush IP configuration
 echo "Flushing IP configuration..."
-sudo ip addr flush dev $WIFI_INTERFACE
+sudo ip addr flush dev "$WIFI_INTERFACE"
 
 # Restore IP Address
 if [ -n "$ORIGINAL_IP" ]; then
