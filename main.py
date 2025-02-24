@@ -74,7 +74,7 @@ class Plugin:
             always_use = self.settings.getSetting("always_use_stored_credentials", "false")
 
         return {"ssid": ssid, "passphrase": passphrase, "always_use_stored_credentials": always_use}
-        
+
     async def update_credentials(self, new_ssid, new_passphrase, always_use):
         """Updates SSID and passphrase, storing to JSON only if always_use_stored_credentials is enabled."""
         self.ssid = new_ssid
@@ -93,7 +93,7 @@ class Plugin:
         decky.logger.info(f"Updated credentials: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
 
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
-    
+
     # HOTSPOT CONTROL METHODS
     async def start_hotspot(self):
             decky.logger.info("Starting Hotspot")
@@ -130,17 +130,17 @@ class Plugin:
             dns_servers = ",".join(self.original_dns) if self.original_dns else ""
 
             decky.logger.info("Restoring network configuration")
-            
+
             result = await self.run_command(
                 f"bash {script_path} {self.wifi_interface} {self.original_ip or ''} {self.original_gateway or ''} {dns_servers}"
             )
-            
+
             if "Network configuration restored successfully" in result:
                 self.hotspot_active = False
                 decky.logger.info("Network configuration restored successfully.")
             else:
                 decky.logger.error("Failed to restore network configuration.")
-            
+
             decky.logger.info("Hotspot stopped")
         except Exception as e:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
@@ -156,7 +156,7 @@ class Plugin:
         except Exception as e:
             decky.logger.error(f"Error checking hotspot status: {e}")
             return False
-        
+
     async def start_wifi_ap(self, ssid, passphrase):
         decky.logger.info("Starting Hotspot")
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_hotspot.sh")
@@ -164,7 +164,7 @@ class Plugin:
         result = await self.run_command(
             f"bash {script_path} {self.wifi_interface} {self.ip_address} {ssid} {passphrase}"
         )
-        
+
         if "Hotspot started successfully" in result:
             self.hotspot_active = True
             decky.logger.info("Hotspot is active.")
@@ -192,13 +192,13 @@ class Plugin:
                         return True  # WLAN is blocked
                     if line.startswith("0:") or line.startswith("1:"):  # Next device section
                         break  # Stop checking after Wireless LAN section
-            
+
             return False  # Not blocked
 
         except Exception as e:
             decky.logger.error(f"Error checking rfkill: {e}")
             return False  # Default to not blocked if there's an error
-        
+
     # DEPENDENCY MANAGEMENT METHODS
     async def check_dependencies(self):
         """Ensure required dependencies are installed."""
@@ -224,14 +224,14 @@ class Plugin:
         result = await self.run_command(
             f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
         )
-        
+
         if "Dependencies installed successfully" in result:
             decky.logger.info("Dependencies installed successfully.")
             return {"success": True}
         else:
             decky.logger.error("Failed to install dependencies.")
             return {"success": False, "error": "Check logs for details"}
-        
+
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/extract_network_config.sh")
@@ -260,7 +260,7 @@ class Plugin:
         decky.logger.info(f"Captured original network config: IP={self.original_ip}, Gateway={self.original_gateway}, DNS={self.original_dns}")
 
         return ip_address, gateway, dns_servers
-    
+
     async def capture_service_states(self):
         """Capture the current state of NetworkManager and iwd before stopping them."""
         decky.logger.info("Capturing service states for NetworkManager and iwd...")
@@ -278,7 +278,7 @@ class Plugin:
             decky.logger.info(f"Service {service}: {'Active' if self.service_states[service] else 'Inactive'}")
 
         decky.logger.info(f"Captured service states: {self.service_states}")
-    
+
     async def configure_firewalld(self):
         """Configure firewalld for broadcast and DHCP traffic using a shell script."""
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/change_firewall_settings.sh")
@@ -288,7 +288,7 @@ class Plugin:
         result = await self.run_command(
             f"bash {script_path} {self.ip_address}"
         )
-        
+
         if "Firewalld configuration updated successfully" in result:
             decky.logger.info("Firewalld configured successfully.")
         else:
@@ -304,7 +304,7 @@ class Plugin:
         result = await self.run_command(
             f"bash {script_path} {self.wifi_interface} {self.dhcp_range} {self.ip_address}"
         )
-        
+
         if "dnsmasq is running" in result:
             decky.logger.info("DHCP Server started successfully.")
         else:
@@ -319,7 +319,7 @@ class Plugin:
         stdout, stderr = await result.communicate()
         decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
         return stdout.decode().strip()
-    
+
     async def ensure_wlan0_up(self):
         """Ensure the wlan0 interface is available and up."""
         decky.logger.info("Checking wlan0 status...")
