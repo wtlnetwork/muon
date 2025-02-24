@@ -4,7 +4,7 @@
 WIFI_INTERFACE=$1
 
 # Extract IP Address
-IP_ADDRESS=$(ip addr show $WIFI_INTERFACE | grep -oP 'inet \K[\d.]+')
+IP_ADDRESS=$(ip addr show "$WIFI_INTERFACE" | grep -oP 'inet \K[\d.]+')
 
 # Extract default gateway
 GATEWAY=$(ip route show default | awk '/default/ {print $3}')

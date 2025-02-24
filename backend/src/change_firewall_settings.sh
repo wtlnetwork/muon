@@ -6,7 +6,7 @@ IP_ADDRESS=$1
 echo "Configuring firewalld for IP address: $IP_ADDRESS"
 
 # Extract subnet from IP Address (e.g. 192.168.8.1 -> 192.168.8.0)
-SUBNET=$(echo $IP_ADDRESS | sed 's/\.[0-9]\+$/\.0/')
+SUBNET=$(echo "$IP_ADDRESS" | sed 's/\.[0-9]\+$/\.0/')
 echo "Extracted Subnet: $SUBNET/24"
 
 # Check if firewalld is active

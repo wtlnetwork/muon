@@ -14,9 +14,9 @@ sudo pkill dnsmasq
 
 # Switch the WiFi chip back to managed mode (i.e. regular client mode)
 echo "Resetting $WIFI_INTERFACE to managed mode..."
-sudo ip link set $WIFI_INTERFACE down
-sudo iw dev $WIFI_INTERFACE set type managed
-sudo ip link set $WIFI_INTERFACE up
+sudo ip link set "$WIFI_INTERFACE" down
+sudo iw dev "$WIFI_INTERFACE" set type managed
+sudo ip link set "$WIFI_INTERFACE" up
 
 # Flush IP configuration
 echo "Flushing IP configuration..."
