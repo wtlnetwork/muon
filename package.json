@@ -1,0 +1,56 @@
+{
+  "name": "muon",
+  "version": "0.1.2",
+  "description": "Ad-hoc networking plugin for Decky.",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wtlnetwork/muon.git"
+  },
+  "keywords": [
+    "decky",
+    "plugin",
+    "steam-deck",
+    "deck",
+    "ad-hoc",
+    "wifi",
+    "hotspot",
+    "tethering",
+    "networking"
+  ],
+  "author": "Jenomorph/WTLNetwork",
+  "license": "CC-BY-NC-SA",
+  "bugs": {
+    "url": "https://github.com/wtlnetwork/muon/issues"
+  },
+  "homepage": "https://github.com/wtlnetwork/muon",
+  "devDependencies": {
+    "@decky/rollup": "^1.0.1",
+    "@decky/ui": "^4.7.2",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/webpack": "^5.28.5",
+    "rollup": "^4.22.5",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@decky/api": "^1.1.2",
+    "decky-frontend-lib": "^3.25.0",
+    "react-icons": "^5.3.0",
+    "tslib": "^2.7.0"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  },
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
+}
