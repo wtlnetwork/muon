@@ -53,7 +53,6 @@ Tested Games:
 
 Untested Selection:
 * [Steam Store of LAN Games](https://store.steampowered.com/category/multiplayer_lan/)
-* [4 Player+ Curator Page](https://store.steampowered.com/curator/11707935-More-Than-4-Local-Multiplayer/?appid=1739300)
 
 ## Planned Updates:
 
