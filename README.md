@@ -1,5 +1,3 @@
-
-
 # **Muon - Ad-Hoc connection for the Steam Deck LCD**
 
 A decky-loader plugin that creates a WiFi access point for another Steam Deck to connect.
@@ -32,28 +30,10 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 ## The Plugin:
 __Here are the plugin options on Decky-loader__
 
-__The Plugin__
-<div>
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://i.imgur.com/jyHkPzC.png">
-   <img src="https://i.imgur.com/jyHkPzC.png" height="500px"/>
- </picture>
-<div>
- 
-__Establishing Connection__
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://i.imgur.com/5v7GvP7.png">
-   <img src="https://i.imgur.com/5v7GvP7.png" height="500px"/>
- </picture>
-<div>
- 
- __Wi-Fi Settings to change SSID, Passphrase and save Credentials__ 
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://i.imgur.com/dQcaU20.png">
-   <img src="https://i.imgur.com/dQcaU20.png" height="434px"/>
- </div>
- </picture>
-</a>
+| The Main Menu | Active Ad-Hoc | Wi-Fi Settings |
+|------------|-------------------------|----------------|
+| <img src="https://i.imgur.com/jyHkPzC.png" alt="The Plugin" width="250"/> | <img src="https://i.imgur.com/5v7GvP7.png" alt="Establishing Connection" width="250"/> | <img src="https://i.imgur.com/dQcaU20.png" alt="Wi-Fi Settings" width="443"/> |
+| Shows your SSID and Passphrase | Your Ad-Hoc connection is established! | Wi-Fi Settings to change SSID, Passphrase and save Credentials |
 
 ## LAN Games:
 __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have a browse here for suggestions!__
@@ -82,13 +62,22 @@ Untested Selection:
 * Advanced Settings Tab for Host
 * ???
 
-## Precaution:
-__We do not recommend the following actions, and we will not take any responsibility if you choose to proceed with the following:__
+<h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
-* Using more than two Steam Decks for Ad-Hoc connections (for untested reasons, likely to change based on research and feedback)
-* Using Muon during flights or air travel
-* Sharing your passphrase with strangers
-* Using Muon on hardware-demanding games (as this could cause overloading for the host Steam Deck)
+<table>
+  <tr>
+    <td>
+      <strong>WARNING: The following actions are strongly discouraged. We assume no liability for any consequences resulting from these actions:</strong>
+      <ul>
+        <li>Connecting more than two Steam Decks via Ad-Hoc (untested, subject to change based on research and feedback)</li>
+        <li>Using Muon during flights or air travel</li>
+        <li>Sharing your passphrase with strangers</li>
+        <li>Running Muon with hardware-intensive games (risk of overloading the host Steam Deck)</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
 
 ## Libraries Used & Credits
 Built using the Decky Plugin Template [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://deckbrew.xyz/discord) as a basis.
