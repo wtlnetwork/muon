@@ -138,12 +138,15 @@ class Plugin:
         except Exception as e:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
 
-    # Check if the hotspot is currently running
+    # Check if the hotspot is currently running using nmcli
     async def is_hotspot_active(self) -> bool:
-        """Checks if the hostapd service is running."""
         try:
-            result = await self.run_command("systemctl is-active hostapd", check=False)
-            is_active = result.strip() == "active"
+            # Check for active WiFi connections and filter for mode 'ap'
+            result = await self.run_command("nmcli -t -f NAME,TYPE,DEVICE connection show --active | grep ':wifi:'", check=False)
+            # Check the mode of the active WiFi device
+            mode_check = await self.run_command("nmcli -t -f MODE dev wifi list | grep '^AP'", check=False)
+            # If the device is in AP mode, it is an active hotspot
+            is_active = bool(mode_check.strip())
             decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
             return is_active
         except Exception as e:
