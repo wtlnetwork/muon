@@ -12,22 +12,6 @@ echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
 
-# -----------------------------------
-# Step 1: Stop Existing Hotspot (if any)
-# -----------------------------------
-echo "Stopping any existing hotspot on $WIFI_INTERFACE..."
-EXISTING_HOTSPOT=$(nmcli connection show --active | grep "$WIFI_INTERFACE" | awk '{print $1}')
-if [ ! -z "$EXISTING_HOTSPOT" ]; then
-    sudo nmcli connection down "$EXISTING_HOTSPOT"
-    sudo nmcli connection delete "$EXISTING_HOTSPOT"
-    echo "Existing hotspot stopped and deleted."
-else
-    echo "No active hotspot found on $WIFI_INTERFACE."
-fi
-
-# -----------------------------------
-# Step 2: Create New Hotspot
-# -----------------------------------
 echo "Creating new hotspot with SSID: $SSID"
 sudo nmcli connection add type wifi ifname "$WIFI_INTERFACE" mode ap con-name "$SSID" ssid "$SSID"
 
@@ -42,9 +26,6 @@ sudo nmcli connection modify "$SSID" ipv4.method shared
 echo "Starting hotspot..."
 sudo nmcli connection up "$SSID"
 
-# -----------------------------------
-# Step 3: Confirmation and Status
-# -----------------------------------
 echo "Hotspot created successfully!"
 nmcli connection show --active | grep "$SSID"
 

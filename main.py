@@ -141,14 +141,28 @@ class Plugin:
     # Check if the hotspot is currently running using nmcli
     async def is_hotspot_active(self) -> bool:
         try:
-            # Check for active WiFi connections and filter for mode 'ap'
-            result = await self.run_command("nmcli -t -f NAME,TYPE,DEVICE connection show --active | grep ':wifi:'", check=False)
-            # Check the mode of the active WiFi device
-            mode_check = await self.run_command("nmcli -t -f MODE dev wifi list | grep '^AP'", check=False)
-            # If the device is in AP mode, it is an active hotspot
-            is_active = bool(mode_check.strip())
-            decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
-            return is_active
+            # Get the active WiFi connection name
+            result = await self.run_command(
+                "nmcli -t -f NAME,TYPE,DEVICE connection show --active | grep ':802-11-wireless:' | cut -d: -f1",
+                check=False
+            )
+            connection_name = result.strip()
+            
+            if connection_name:
+                # Get the mode and clean the output
+                mode_result = await self.run_command(
+                    f"nmcli -t -f 802-11-wireless.mode connection show '{connection_name}' | grep -v '^$' | head -n 1 | awk -F: '{{print $2}}' | xargs",
+                    check=False
+                )
+                mode = mode_result.strip()
+                
+                if mode == "ap":
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        
         except Exception as e:
             decky.logger.error(f"Error checking hotspot status: {e}")
             return False
