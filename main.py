@@ -109,8 +109,6 @@ class Plugin:
                 await self.check_dependencies()
                 await self.configure_firewalld()
                 await self.ensure_wlan0_up()
-                await self.capture_network_config()
-                await self.capture_service_states()
                 await self.start_wifi_ap(ssid, passphrase)
                 await self.start_dhcp_server()
 
@@ -125,12 +123,9 @@ class Plugin:
         decky.logger.info("Stopping Hotspot")
         try:
             script_path = os.path.join(os.path.dirname(__file__), "backend/src/stop_hotspot.sh")
-            dns_servers = ",".join(self.original_dns) if self.original_dns else ""
-
-            decky.logger.info("Restoring network configuration")
 
             result = await self.run_command(
-                f"bash {script_path} {self.wifi_interface} {self.original_ip or ''} {self.original_gateway or ''} {dns_servers}"
+                f"bash {script_path} {self.wifi_interface}"
             )
 
             if "Network configuration restored successfully" in result:
@@ -215,12 +210,11 @@ class Plugin:
 
         # Convert booleans to strings for shell script compatibility
         dnsmasq_flag = "true" if install_dnsmasq else "false"
-        hostapd_flag = "true" if install_hostapd else "false"
 
         decky.logger.info("Installing dependencies via Shell Script")
 
         result = await self.run_command(
-            f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
+            f"bash {script_path} {dnsmasq_flag}"
         )
 
         if "Dependencies installed successfully" in result:
@@ -230,53 +224,7 @@ class Plugin:
         decky.logger.error("Failed to install dependencies.")
         return {"success": False, "error": "Check logs for details"}
 
-    # NETWORK CONFIGURATION AND SERVICE METHODS
-    async def capture_network_config(self):
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/extract_network_config.sh")
-        decky.logger.info("Extracting network configuration via Shell Script")
-
-        result = await self.run_command(f"bash {script_path} {self.wifi_interface}")
-
-        # Parsing of shell output into a dictionary
-        config = {}
-        for line in result.splitlines():
-            if "=" in line:
-                key, value = line.split("=", 1)
-                config[key.strip()] = value.strip()
-
-        ip_address = config.get("IP_ADDRESS")
-        gateway = config.get("GATEWAY")
-        dns_servers = config.get("DNS_SERVERS", "").split(",")
-
-        decky.logger.info(f"Extracted IP: {ip_address}")
-        decky.logger.info(f"Extracted Gateway: {gateway}")
-        decky.logger.info(f"Extracted DNS Servers: {dns_servers}")
-
-        self.original_ip = ip_address
-        self.original_gateway = gateway
-        self.original_dns = dns_servers
-        decky.logger.info(f"Captured original network config: IP={self.original_ip}, Gateway={self.original_gateway}, DNS={self.original_dns}")
-
-        return ip_address, gateway, dns_servers
-
-    async def capture_service_states(self):
-        """Capture the current state of NetworkManager and iwd before stopping them."""
-        decky.logger.info("Capturing service states for NetworkManager and iwd...")
-        # Initialise variable for storing service states
-        self.service_states = {}
-        # Array of services to check
-        services = ["NetworkManager", "iwd"]
-
-        # For each service in the services array:
-        for service in services:
-            # Check if the service is running
-            status = await self.run_command(f"sudo systemctl is-active {service}")
-            # Save the state of the service into the service_states array
-            self.service_states[service] = status.strip() == "active"  # Store True if active, False if inactive
-            decky.logger.info(f"Service {service}: {'Active' if self.service_states[service] else 'Inactive'}")
-
-        decky.logger.info(f"Captured service states: {self.service_states}")
-
+    # FIREWALL AND DHCP SERVICES
     async def configure_firewalld(self):
         """Configure firewalld for broadcast and DHCP traffic using a shell script."""
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/change_firewall_settings.sh")

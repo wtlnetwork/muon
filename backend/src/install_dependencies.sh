@@ -2,11 +2,9 @@
 
 # Boolean flags to determine if dnsmasq and hostapd should be installed
 INSTALL_DNSMASQ=$1
-INSTALL_HOSTAPD=$2
 
 echo "Installing dependencies..."
 echo "Install dnsmasq: $INSTALL_DNSMASQ"
-echo "Install hostapd: $INSTALL_HOSTAPD"
 
 # Disable SteamOS read-only system state
 echo "Disabling SteamOS read-only state..."
@@ -25,16 +23,6 @@ if [ "$INSTALL_DNSMASQ" == "true" ]; then
     sudo pacman -Sy --noconfirm dnsmasq
     if [ $? -ne 0 ]; then
         echo "Failed to install dnsmasq."
-        ERROR=true
-    fi
-fi
-
-# If hostapd is set to install, install it
-if [ "$INSTALL_HOSTAPD" == "true" ]; then
-    echo "Installing hostapd..."
-    sudo pacman -Sy --noconfirm hostapd
-    if [ $? -ne 0 ]; then
-        echo "Failed to install hostapd."
         ERROR=true
     fi
 fi

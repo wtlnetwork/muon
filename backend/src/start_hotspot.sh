@@ -5,85 +5,53 @@ WIFI_INTERFACE=$1
 STATIC_IP=$2
 SSID=$3
 PASSPHRASE=$4
-HOSTAPD_CONF="/etc/hostapd/hostapd.conf"
 
-echo "Starting hotspot setup..."
+echo "Starting hotspot setup with nmcli..."
 echo "WiFi Interface: $WIFI_INTERFACE"
 echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
 
 # -----------------------------------
-# Step 1: Stop Network Services
+# Step 1: Stop Existing Hotspot (if any)
 # -----------------------------------
-echo "Stopping network services..."
-sudo systemctl stop NetworkManager
-sudo systemctl stop iwd
-if [ $? -ne 0 ]; then
-    echo "Failed to stop network services."
-    exit 1
-fi
-echo "Network services stopped."
-
-# -----------------------------------
-# Step 2: Configure Static IP
-# -----------------------------------
-echo "Configuring static IP for $WIFI_INTERFACE..."
-
-# Flush the existing IP configuration from the interface
-echo "Flushing existing IP configuration on $WIFI_INTERFACE..."
-sudo ip addr flush dev $WIFI_INTERFACE
-
-# Check if the interface already has the correct IP assigned
-echo "Checking if $STATIC_IP is already assigned to $WIFI_INTERFACE..."
-EXISTING_IP=$(ip addr show $WIFI_INTERFACE | grep -oP 'inet \K[\d.]+')
-
-if [ "$EXISTING_IP" == "$STATIC_IP" ]; then
-    echo "IP $STATIC_IP is already assigned to $WIFI_INTERFACE. Skipping re-assignment."
+echo "Stopping any existing hotspot on $WIFI_INTERFACE..."
+EXISTING_HOTSPOT=$(nmcli connection show --active | grep "$WIFI_INTERFACE" | awk '{print $1}')
+if [ ! -z "$EXISTING_HOTSPOT" ]; then
+    sudo nmcli connection down "$EXISTING_HOTSPOT"
+    sudo nmcli connection delete "$EXISTING_HOTSPOT"
+    echo "Existing hotspot stopped and deleted."
 else
-    # Assign the static IP to the interface
-    echo "Assigning IP $STATIC_IP/24 to $WIFI_INTERFACE..."
-    sudo ip addr add "$STATIC_IP/24" dev "$WIFI_INTERFACE"
-    sleep 1
-
-    # Validate the IP assignment
-    echo "Validating IP assignment..."
-    FINAL_IP_CHECK=$(ip addr show $WIFI_INTERFACE | grep "$STATIC_IP")
-    if [ -z "$FINAL_IP_CHECK" ]; then
-        echo "Failed to assign IP $STATIC_IP to $WIFI_INTERFACE."
-        exit 1
-    else
-        echo "Successfully assigned IP $STATIC_IP to $WIFI_INTERFACE."
-    fi
+    echo "No active hotspot found on $WIFI_INTERFACE."
 fi
 
 # -----------------------------------
-# Step 3: Start Hotspot
+# Step 2: Create New Hotspot
 # -----------------------------------
-echo "Starting hotspot with SSID: $SSID"
+echo "Creating new hotspot with SSID: $SSID"
+sudo nmcli connection add type wifi ifname "$WIFI_INTERFACE" mode ap con-name "$SSID" ssid "$SSID"
 
-# Generate hostapd configuration
-echo "Generating hostapd configuration..."
-cat <<EOT > $HOSTAPD_CONF
-interface=$WIFI_INTERFACE
-driver=nl80211
-ssid=$SSID
-hw_mode=g
-channel=6
-wpa=2
-wpa_passphrase=$PASSPHRASE
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
-EOT
-echo "Hostapd configuration generated."
+echo "Setting up hotspot security (WPA2)..."
+sudo nmcli connection modify "$SSID" 802-11-wireless-security.key-mgmt wpa-psk
+sudo nmcli connection modify "$SSID" 802-11-wireless-security.psk "$PASSPHRASE"
 
-# Restart hostapd
-echo "Restarting hostapd..."
-sudo systemctl restart hostapd
-if [ $? -ne 0 ]; then
-    echo "Failed to start hostapd."
-    exit 1
-fi
-echo "Hotspot started successfully."
+echo "Configuring IP settings..."
+sudo nmcli connection modify "$SSID" ipv4.addresses "$STATIC_IP/24"
+sudo nmcli connection modify "$SSID" ipv4.method shared
+
+echo "Starting hotspot..."
+sudo nmcli connection up "$SSID"
+
+# -----------------------------------
+# Step 3: Confirmation and Status
+# -----------------------------------
+echo "Hotspot created successfully!"
+nmcli connection show --active | grep "$SSID"
+
+echo "Hotspot Details:"
+echo "SSID: $SSID"
+echo "Static IP: $STATIC_IP"
+echo "Security: WPA2"
+echo "WiFi Interface: $WIFI_INTERFACE"
 
 exit 0
