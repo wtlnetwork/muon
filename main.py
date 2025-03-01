@@ -1,5 +1,7 @@
+import json
 import os
 import asyncio
+import re
 import decky
 import subprocess
 from settings import SettingsManager
@@ -316,6 +318,78 @@ class Plugin:
 
     async def resume_ap(self):
         decky.logger.info("Resuming from suspension...")
+
+    # CLIENT LIST METHODS
+    async def get_connected_devices(self):
+        """
+        Combines output from hostapd_cli and dnsmasq to return connected devices info in JSON format.
+        Returns:
+            JSON-formatted string with connected devices' MAC, IP, Hostname, and Signal Strength
+        """
+        decky.logger.info("Fetching connected devices...")
+
+        # Hostapd and dnsmasq locations
+        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.wifi_interface} all_sta"
+        dnsmasq_leases_file = "/var/lib/misc/dnsmasq.leases"
+
+        # Dictionary to store device info
+        devices = {}
+
+        try:
+            # Get the output from hostapd_cli using the run_command utility
+            hostapd_output = await self.run_command(hostapd_cmd)
+
+            # Parse hostapd output for MAC and signal strength
+            current_mac = None
+            for line in hostapd_output.splitlines():
+                line = line.strip()
+
+                # Match MAC address
+                if re.match(r"^[0-9a-fA-F:]{17}$", line):
+                    current_mac = line
+                    devices[current_mac] = {
+                        "mac": current_mac,
+                        "ip": None,
+                        "hostname": None,
+                        "signal_strength": None
+                    }
+                # Match signal strength
+                elif line.startswith("signal=") and current_mac:
+                    signal_strength = int(line.split("=")[-1])
+                    # Normalize to negative
+                    if signal_strength > 0:
+                        signal_strength = -signal_strength
+                    devices[current_mac]["signal_strength"] = signal_strength
+
+        except Exception as e:
+            decky.logger.error(f"Error running hostapd_cli: {str(e)}")
+            return json.dumps({"error": "Failed to retrieve data from hostapd_cli"})
+
+        # Read and parse dnsmasq leases file
+        try:
+            with open(dnsmasq_leases_file, 'r') as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) >= 4:
+                        mac = parts[1]
+                        ip = parts[2]
+                        hostname = parts[3]
+
+                        # If MAC is already in devices dict, add IP and hostname
+                        if mac in devices:
+                            devices[mac]["ip"] = ip
+                            devices[mac]["hostname"] = hostname
+
+        except FileNotFoundError:
+            decky.logger.error(f"Error: {dnsmasq_leases_file} not found.")
+            return json.dumps({"error": "dnsmasq leases file not found"})
+
+        # Convert to JSON format
+        connected_devices_json = json.dumps(list(devices.values()), indent=4)
+        decky.logger.info(f"Connected Devices: {connected_devices_json}")
+
+        return connected_devices_json
+
 
 
     # UTILITY METHODS

@@ -6,6 +6,7 @@ STATIC_IP=$2
 SSID=$3
 PASSPHRASE=$4
 HOSTAPD_CONF="/etc/hostapd/hostapd.conf"
+CTRL_INTERFACE_DIR="/var/run/hostapd"
 
 echo "Starting hotspot setup..."
 echo "WiFi Interface: $WIFI_INTERFACE"
@@ -58,13 +59,30 @@ else
 fi
 
 # -----------------------------------
-# Step 3: Start Hotspot
+# Step 3: Prepare Control Interface Directory
+# -----------------------------------
+echo "Ensuring control interface directory exists..."
+
+# Create the control directory if it doesn't exist
+if [ ! -d "$CTRL_INTERFACE_DIR" ]; then
+    echo "Creating control interface directory: $CTRL_INTERFACE_DIR"
+    sudo mkdir -p "$CTRL_INTERFACE_DIR"
+fi
+
+# Set the correct permissions
+echo "Setting correct permissions for control interface directory..."
+sudo chown root:root "$CTRL_INTERFACE_DIR"
+sudo chmod 755 "$CTRL_INTERFACE_DIR"
+echo "Control interface directory is ready."
+
+# -----------------------------------
+# Step 4: Start Hotspot
 # -----------------------------------
 echo "Starting hotspot with SSID: $SSID"
 
 # Generate hostapd configuration
 echo "Generating hostapd configuration..."
-cat <<EOT > $HOSTAPD_CONF
+cat <<EOT | sudo tee $HOSTAPD_CONF > /dev/null
 interface=$WIFI_INTERFACE
 driver=nl80211
 ssid=$SSID
@@ -74,6 +92,10 @@ wpa=2
 wpa_passphrase=$PASSPHRASE
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
+
+# Control interface for hostapd_cli communication
+ctrl_interface=$CTRL_INTERFACE_DIR
+ctrl_interface_group=0
 EOT
 echo "Hostapd configuration generated."
 
@@ -85,5 +107,29 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "Hotspot started successfully."
+
+# -----------------------------------
+# Step 5: Verify Hostapd Control Interface
+# -----------------------------------
+echo "Verifying hostapd control interface..."
+
+# Check if the control socket was created
+if [ -e "$CTRL_INTERFACE_DIR/$WIFI_INTERFACE" ]; then
+    echo "Control interface socket exists."
+else
+    echo "Control interface socket not found. Check hostapd logs for issues."
+    exit 1
+fi
+
+# Test hostapd_cli connection
+echo "Testing hostapd_cli connection..."
+sudo hostapd_cli -p "$CTRL_INTERFACE_DIR" -i "$WIFI_INTERFACE" status
+if [ $? -ne 0 ]; then
+    echo "Failed to connect to hostapd using hostapd_cli."
+    exit 1
+fi
+echo "hostapd_cli connection successful."
+
+echo "Hotspot setup complete."
 
 exit 0

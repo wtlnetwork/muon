@@ -21,6 +21,8 @@ const checkDependencies = callable<[], Record<string, boolean>>("check_dependenc
 const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
+const getConnectedDevices = callable<[], any>("get_connected_devices");
+
 
 declare global {
   interface Window {
@@ -36,6 +38,7 @@ function Content() {
   const [dependencies, setDependencies] = useState<Record<string, boolean> | null>(null);
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
+  const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -79,9 +82,40 @@ function Content() {
   
     initializeSettings();
   }, []);
-  
-  
 
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const devices = await getConnectedDevices();
+        console.log("Connected Devices Response:", devices);
+    
+        // If devices is a JSON string, parse it
+        const parsedDevices = typeof devices === "string" ? JSON.parse(devices) : devices;
+    
+        // Ensure it's an array before setting state
+        setConnectedDevices(Array.isArray(parsedDevices) ? parsedDevices : []);
+      } catch (error) {
+        console.error("Failed to fetch connected devices:", error);
+        setConnectedDevices([]); // Set to empty array on error
+      }
+    };
+  
+    // Poll every 5 seconds when hotspot is running
+    if (hotspotStatus === "stop") {
+      fetchDevices(); // Fetch immediately when hotspot starts
+  
+      const interval = setInterval(() => {
+        fetchDevices();
+      }, 5000); // Poll every 5 seconds
+  
+      return () => clearInterval(interval);
+    }
+  
+    // Explicitly return undefined when not polling
+    return undefined;
+  }, [hotspotStatus]);
+  
+  
   const handleClick = async () => {
     if (passphrase.length < 8 || passphrase.length > 63) {
       toaster.toast({ title: "Error", body: "Password must be between 8 and 63 characters." });
@@ -109,8 +143,6 @@ function Content() {
     }
   };
   
-  
-
   if (dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"])) {
     const missingDnsmasq = !dependencies["dnsmasq"];
     const missingHostapd = !dependencies["hostapd"];
@@ -163,61 +195,98 @@ function Content() {
   }  
   
   return (
-    <PanelSection title="Hotspot Configuration">
-      <PanelSectionRow>
-        <TextField label="SSID" value={ssid} disabled={true} />
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <TextField 
-          label="Passphrase"
-          value={passphrase} 
-          disabled={true}
-        />
-        <ButtonItem
-          layout="inline"
-          onClick={() =>
-            showWifiSettingsModal(ssid, passphrase, alwaysUseStoredCredentials, async (newSsid, newPassphrase, alwaysUse) => {
-              // Fetch updated values from Python after saving
-              const updatedConfig = await callable<[string, string, boolean], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>(
-                "update_credentials"
-              )(newSsid, newPassphrase, alwaysUse);
-
-              setSsid(updatedConfig.ssid);
-              setPassphrase(updatedConfig.passphrase);
-              setAlwaysUseStoredCredentials(updatedConfig.always_use_stored_credentials);
-            })
-          }
-          
-        >
-          <FaCog /> Edit WiFi Settings
-        </ButtonItem>
-
-
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem layout="inline" onClick={handleClick} disabled={hotspotStatus === "loading" || isBlocked}>
-          {hotspotStatus === "loading" ? (
-            <>
-              <FaSpinner className="animate-spin" /> Working...
-            </>
-          ) : hotspotStatus === "start" ? (
-            <>
-              <FaWifi /> Start Hotspot
-            </>
-          ) : (
-            <>
-              <FaWifi /> Stop Hotspot
-            </>
-          )}
-        </ButtonItem>
-      </PanelSectionRow>
-
-      {isBlocked && (
+    <>
+      {/* Hotspot Control Section */}
+      <PanelSection title="Hotspot Control">
         <PanelSectionRow>
-          <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
+          <ButtonItem
+            layout="inline"
+            onClick={handleClick}
+            disabled={hotspotStatus === "loading" || isBlocked}
+          >
+            {hotspotStatus === "loading" ? (
+              <>
+                <FaSpinner className="animate-spin" /> Working...
+              </>
+            ) : hotspotStatus === "start" ? (
+              <>
+                <FaWifi /> Start Hotspot
+              </>
+            ) : (
+              <>
+                <FaWifi /> Stop Hotspot
+              </>
+            )}
+          </ButtonItem>
         </PanelSectionRow>
+  
+        {isBlocked && (
+          <PanelSectionRow>
+            <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+  
+      {/* Connected Devices Section */}
+      {hotspotStatus === "stop" && (
+        <PanelSection title="Connected Devices">
+          {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
+            connectedDevices.map((device, index) => (
+              <PanelSectionRow key={index}>
+                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                  <div style={{ width: "50px", textAlign: "center" }}>
+                    <strong>{device.signal_strength}</strong>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
+                    <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
+                  </div>
+                </div>
+              </PanelSectionRow>
+            ))
+          ) : (
+            <PanelSectionRow>
+              <p>No devices connected.</p>
+            </PanelSectionRow>
+          )}
+        </PanelSection>
       )}
-    </PanelSection>
+  
+      {/* SSID/Passphrase and Settings Section */}
+      <PanelSection title="Network Settings">
+        <PanelSectionRow>
+          <TextField label="SSID" value={ssid} disabled={true} />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <TextField label="Passphrase" value={passphrase} disabled={true} />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="inline"
+            onClick={() =>
+              showWifiSettingsModal(
+                ssid,
+                passphrase,
+                alwaysUseStoredCredentials,
+                async (newSsid, newPassphrase, alwaysUse) => {
+                  // Fetch updated values from Python after saving
+                  const updatedConfig = await callable<
+                    [string, string, boolean],
+                    { ssid: string; passphrase: string; always_use_stored_credentials: boolean }
+                  >("update_credentials")(newSsid, newPassphrase, alwaysUse);
+  
+                  setSsid(updatedConfig.ssid);
+                  setPassphrase(updatedConfig.passphrase);
+                  setAlwaysUseStoredCredentials(updatedConfig.always_use_stored_credentials);
+                }
+              )
+            }
+          >
+            <FaCog /> Edit WiFi Settings
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+    </>
   );
 };
 
