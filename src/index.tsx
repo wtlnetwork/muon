@@ -14,6 +14,7 @@ import {
 import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
+import { getSignalIcon } from "./signalIcons";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
@@ -234,8 +235,8 @@ function Content() {
             connectedDevices.map((device, index) => (
               <PanelSectionRow key={index}>
                 <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <div style={{ width: "50px", textAlign: "center" }}>
-                    <strong>{device.signal_strength}</strong>
+                  <div style={{ width: "50px", height: "50px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    {getSignalIcon(device.signal_strength, 32)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
