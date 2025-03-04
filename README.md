@@ -45,6 +45,7 @@ We are working on ensuring that the plugin works with every possible LAN game.
 Testing waiting room:
 * Rainbow Six Vegas 2
 * Splinter Cell Chaos Theory
+* Halo: The Master Chief Collection
 
 Tested Games: 
 * [Quake III Arena](https://store.steampowered.com/app/2200/Quake_III_Arena/)
@@ -56,7 +57,7 @@ Untested Selection:
 
 ## Planned Updates:
 
-* UI Improvements
+* UI Improvements (Currently Active)
 * Steam Deck OLED Support
 * Advanced Settings Tab for Host
 * ???
