@@ -201,7 +201,7 @@ function Content() {
       <PanelSection title="Hotspot Control">
         <PanelSectionRow>
           <ButtonItem
-            layout="inline"
+            layout="below"
             onClick={handleClick}
             disabled={hotspotStatus === "loading" || isBlocked}
           >
