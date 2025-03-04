@@ -116,6 +116,23 @@ function Content() {
     return undefined;
   }, [hotspotStatus]);
   
+  const spinnerStyle = {
+    animation: "spin 1s linear infinite"
+  };
+  
+  const Spinner = () => (
+    <>
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+      <FaSpinner style={spinnerStyle} /> Working...
+    </>
+  );
   
   const handleClick = async () => {
     if (passphrase.length < 8 || passphrase.length > 63) {
@@ -207,7 +224,7 @@ function Content() {
           >
             {hotspotStatus === "loading" ? (
               <>
-                <FaSpinner className="animate-spin" /> Working...
+                <Spinner />
               </>
             ) : hotspotStatus === "start" ? (
               <>
