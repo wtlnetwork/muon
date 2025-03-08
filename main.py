@@ -1,5 +1,7 @@
+import json
 import os
 import asyncio
+import re
 import decky
 import subprocess
 from settings import SettingsManager
@@ -213,7 +215,7 @@ class Plugin:
     async def check_dependencies(self):
         """Ensure required dependencies are installed."""
         statuses = {}
-        for dep in ["dnsmasq", "hostapd"]:
+        for dep in ["dnsmasq"]:
             result = await self.run_command(f"which {dep}")
             statuses[dep] = bool(result)
             if not result:
@@ -222,7 +224,7 @@ class Plugin:
         return statuses
 
     async def install_dependencies(self, install_dnsmasq: bool):
-        """Installs dnsmasq and hostapd using a shell script."""
+        """Installs dnsmasq using a shell script."""
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
 
         # Convert booleans to strings for shell script compatibility
@@ -281,6 +283,69 @@ class Plugin:
 
     async def resume_ap(self):
         decky.logger.info("Resuming from suspension...")
+
+    # CLIENT LIST
+    async def get_connected_devices(self):
+        """
+        Fetches connected devices using nmcli.
+        Returns:
+            JSON-formatted string with connected devices' MAC, IP, Hostname, and Signal Strength
+        """
+        decky.logger.info("Fetching connected devices using nmcli...")
+
+        devices = {}
+
+        try:
+            # Get connected devices using nmcli
+            nmcli_cmd = f"nmcli -t -f ACTIVE,SSID,BSSID,SIGNAL dev wifi list"
+            nmcli_output = await self.run_command(nmcli_cmd)
+
+            for line in nmcli_output.splitlines():
+                parts = line.strip().split(":")
+                if len(parts) >= 4 and parts[0] == "yes":  # Only include active connections
+                    mac = parts[2]
+
+                    # Handle invalid signal strength values gracefully
+                    try:
+                        signal_strength = int(parts[3]) if parts[3].isdigit() else -100
+                    except ValueError:
+                        decky.logger.error(f"Invalid signal strength value: {parts[3]}")
+                        signal_strength = -100
+
+                    devices[mac] = {
+                        "mac": mac,
+                        "ip": None,
+                        "hostname": None,
+                        "signal_strength": signal_strength
+                    }
+
+        except Exception as e:
+            decky.logger.error(f"Error fetching data from nmcli: {str(e)}")
+            return json.dumps({"error": "Failed to retrieve data from nmcli"})
+
+        # Get IP and hostname from nmcli (removed invalid field 'IP4.DHCP4.OPTION')
+        try:
+            nmcli_ip_cmd = f"nmcli -f IP4.ADDRESS,IP4.GATEWAY device show {self.wifi_interface}"
+            nmcli_ip_output = await self.run_command(nmcli_ip_cmd)
+
+            ip = None
+            for line in nmcli_ip_output.splitlines():
+                if "IP4.ADDRESS" in line:
+                    ip = line.split(":")[-1].strip()
+
+            # Assign IPs to known devices
+            if ip:
+                for mac in devices:
+                    devices[mac]["ip"] = ip
+
+        except Exception as e:
+            decky.logger.error(f"Error fetching IP data from nmcli: {str(e)}")
+
+        # Convert to JSON format
+        connected_devices_json = json.dumps(list(devices.values()), indent=4)
+        decky.logger.info(f"Connected Devices: {connected_devices_json}")
+
+        return connected_devices_json
 
 
     # UTILITY METHODS

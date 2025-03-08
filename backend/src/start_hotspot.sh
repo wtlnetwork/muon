@@ -12,6 +12,12 @@ echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
 
+EXISTING_CONNECTION=$(nmcli -t -f NAME connection show | grep "^$SSID$")
+if [ ! -z "$EXISTING_CONNECTION" ]; then
+    echo "Removing existing hotspot configuration: $SSID"
+    sudo nmcli connection delete "$SSID"
+fi
+
 echo "Creating new hotspot with SSID: $SSID"
 sudo nmcli connection add type wifi ifname "$WIFI_INTERFACE" mode ap con-name "$SSID" ssid "$SSID"
 
