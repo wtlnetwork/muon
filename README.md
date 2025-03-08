@@ -43,14 +43,19 @@ Games with legacy browser searches will work, but some games that use an alterna
 We are working on ensuring that the plugin works with every possible LAN game.
 
 Testing waiting room:
-* Rainbow Six Vegas 2
-* Splinter Cell Chaos Theory
 * Halo: The Master Chief Collection
 
 Tested Games: 
 * [Quake III Arena](https://store.steampowered.com/app/2200/Quake_III_Arena/)
 * [Garry's Mod](https://store.steampowered.com/app/4000/Garrys_Mod/)
 * [Counter-Strike: Source](https://store.steampowered.com/app/240/CounterStrike_Source/)
+* [Rainbow Six: Vegas 2](https://store.steampowered.com/app/15120/Tom_Clancys_Rainbow_Six_Vegas_2/)
+* [Splinter Cell: Chaos Theory](https://store.steampowered.com/app/13570/Tom_Clancys_Splinter_Cell_Chaos_Theory/)
+
+Unsupported: (Further plugin development needed)
+* Left 4 Dead 1 & 2
+* Lethal Company
+* Kletka
 
 Untested Selection:
 * [Steam Store of LAN Games](https://store.steampowered.com/category/multiplayer_lan/)
