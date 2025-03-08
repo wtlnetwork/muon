@@ -221,7 +221,7 @@ class Plugin:
         decky.logger.info("Dependency statuses: " + str(statuses))
         return statuses
 
-    async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
+    async def install_dependencies(self, install_dnsmasq: bool):
         """Installs dnsmasq and hostapd using a shell script."""
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
 
