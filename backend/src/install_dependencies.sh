@@ -8,38 +8,80 @@ echo "Installing dependencies..."
 echo "Install dnsmasq: $INSTALL_DNSMASQ"
 echo "Install hostapd: $INSTALL_HOSTAPD"
 
-# Disable SteamOS read-only system state
-echo "Disabling SteamOS read-only state..."
-sudo steamos-readonly disable
+OS_ID="ID=steamos"
+VERSION_ID=$(grep VERSION_ID /etc/os-release)
+EXTENSION_NAME="muon-network-tools"
+EXTENSION_DIR="/tmp/$EXTENSION_NAME"
+EXTENSION_RELEASE="$EXTENSION_DIR/usr/lib/extension-release.d/extension-release.$EXTENSION_NAME"
+EXTENSION_SRC="/var/lib/extensions/$EXTENSION_NAME.raw"
+EXTENSION_TMP="./$EXTENSION_NAME.raw"
 
-# Initialize and populate Pacman keys
-echo "Initializing and populating Pacman keys..."
-sudo pacman-key --init
-sudo pacman-key --populate archlinux
-sudo pacman-key --populate holo
+# Ensure the extension directory exists
+mkdir -p "$EXTENSION_DIR"
+mkdir -p "$EXTENSION_DIR/usr/lib/extension-release.d/"
+mkdir -p "$EXTENSION_DIR/var/lib/pacman"
 
-# If dnsmasq is set to install, install it
 ERROR=false
+
+# Initialize Pacman for the extension
+echo "Initializing Pacman database inside the extension..."
+sudo pacman-key --init
+sudo pacman-key --populate archlinux holo
+PACMAN_CMD="sudo pacman --noconfirm --needed --root $EXTENSION_DIR --dbpath $EXTENSION_DIR/var/lib/pacman -Sy"
+
+# Install dnsmasq if needed
 if [ "$INSTALL_DNSMASQ" == "true" ]; then
-    echo "Installing dnsmasq..."
-    sudo pacman -Sy --noconfirm dnsmasq
+    echo "Installing dnsmasq and dependencies via Pacman..."
+    $PACMAN_CMD dnsmasq
     if [ $? -ne 0 ]; then
         echo "Failed to install dnsmasq."
         ERROR=true
     fi
 fi
 
-# If hostapd is set to install, install it
+# Install hostapd if needed
 if [ "$INSTALL_HOSTAPD" == "true" ]; then
-    echo "Installing hostapd..."
-    sudo pacman -Sy --noconfirm hostapd
+    echo "Installing hostapd and dependencies via Pacman..."
+    $PACMAN_CMD hostapd
     if [ $? -ne 0 ]; then
         echo "Failed to install hostapd."
         ERROR=true
     fi
 fi
 
-# If we encountered an error, exit with an error code
+# Ensure the extension release file exists
+echo "Creating extension release file..."
+echo "$OS_ID" > "$EXTENSION_RELEASE"
+echo "$VERSION_ID" >> "$EXTENSION_RELEASE"
+
+# Build the system extension
+echo "Building system extension..."
+rm -f "$EXTENSION_TMP"
+mksquashfs "$EXTENSION_DIR" "$EXTENSION_TMP" -comp xz -b 256K -Xdict-size 64K
+echo "SquashFS extension created successfully."
+
+# Move extension to the correct location
+mkdir -p /var/lib/extensions
+mv -f "$EXTENSION_TMP" "$EXTENSION_SRC"
+echo "Extension moved to $EXTENSION_SRC"
+
+# Clean up extracted files to avoid clutter
+echo "Cleaning up temporary files..."
+rm -rf "$EXTENSION_DIR"
+
+# Enable and refresh system extensions
+echo "Refreshing systemd-sysext..."
+systemd-sysext refresh
+
+# Check if systemd-sysext loaded it
+echo "Checking systemd-sysext status..."
+systemd-sysext status
+
+# Debugging: Check installed files
+echo "Checking installed dependencies..."
+ls -l /var/lib/extensions/ | grep "$EXTENSION_NAME"
+
+# Final check
 if [ "$ERROR" == "true" ]; then
     echo "One or more dependencies failed to install."
     exit 1

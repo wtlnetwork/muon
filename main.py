@@ -19,6 +19,7 @@ class Plugin:
         self.passphrase = None
 
     async def _main(self):
+        await self.initialise_extension()
         decky.logger.info("Hotspot Plugin Loaded")
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
         self.settings.read()
@@ -29,6 +30,13 @@ class Plugin:
         if self.hotspot_active:
             await self.stop_hotspot()
         decky.logger.info("Plugin Unloaded")
+
+    async def _uninstall(self):
+        result = await self.run_command(
+                f"bash {os.path.join(os.path.dirname(__file__), 'backend/src/uninstall_dependencies.sh')}"
+            )
+        decky.logger.info("Uninstalled Muon dependencies")
+        pass
 
     # SETTINGS METHODS
     async def load_settings(self):
@@ -210,6 +218,13 @@ class Plugin:
                 decky.logger.error(f"ERROR: `{dep}` is not installed.")
         decky.logger.info("Dependency statuses: " + str(statuses))
         return statuses
+    
+    async def initialise_extension(self):
+        decky.logger.info("Checking extension status...")
+        script_path = os.path.join(os.path.dirname(__file__), "backend/src/enable_extensions.sh")
+
+        result = await self.run_command(script_path)
+        return result
 
     async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
         """Installs dnsmasq and hostapd using a shell script."""
