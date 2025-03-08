@@ -45,7 +45,7 @@ We are working on ensuring that the plugin works with every possible LAN game.
 Testing waiting room:
 * Halo: The Master Chief Collection
 
-Tested Games: 
+Supported Games: 
 * [Quake III Arena](https://store.steampowered.com/app/2200/Quake_III_Arena/)
 * [Garry's Mod](https://store.steampowered.com/app/4000/Garrys_Mod/)
 * [Counter-Strike: Source](https://store.steampowered.com/app/240/CounterStrike_Source/)
