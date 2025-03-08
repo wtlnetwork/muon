@@ -1,40 +1,40 @@
 export const getSignalIcon = (signalStrength: number, size: number = 50) => {
-    const iconStyle = {
-      width: `${size}px`,
-      height: `${size}px`,
-    };
-  
-    if (signalStrength >= -49) {
-      return (
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAJtJREFUOE9jZGBgEGBgYPiPAAqwgqEwCwgIgEQB8SAQBcQIQTwIBYgAoQAACAegBokDABW7QKBxQJgAElAYXgJgKICgAADAIA4YU3f0AAAAASUVORK5CYII="
-          alt="Excellent Signal"
-          style={iconStyle}
-        />
-      );
-    } else if (signalStrength >= -59) {
-      return (
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAMBJREFUOE9jZGBgEBBkYBBiMDBAYlAwA4gEQJMgFgDiTgDxLhBDIDAAk0EA8S4QQyAQB4IBEAACA7wCB2QJgAQAAAABJRU5ErkJggg=="
-          alt="Good Signal"
-          style={iconStyle}
-        />
-      );
-    } else if (signalStrength >= -69) {
-      return (
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANlJREFUOE9jZGBgEBAYGIHiCN4NxQYQBcgEQJMgFgDiTgDxLhBDIBAHggERIArEkyAwBRJgYICogMgwgExlAwAAH40CBwPUHMAAAAAElFTkSuQmCC"
-          alt="Fair Signal"
-          style={iconStyle}
-        />
-      );
-    } else {
-      return (
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAQCAYAAAD5W6JAAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAERJREFUOE9jZGBgEBBkYBBiMgAJiJgEgQBIzABRkgFgTQCQAOQkA8CcQJAA5CUQCwJxAkADkJFADADScAi0IoBeAAAAABJRU5ErkJggg=="
-          alt="Weak Signal"
-          style={iconStyle}
-        />
-      );
-    }
-  };  
+  const iconStyle = {
+    width: `${size}px`,
+    height: `${size}px`,
+  };
+
+  if (signalStrength >= -49) {
+    return (
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAC4jAAAuIwF4pT92AAAAG3RFWHRTb2Z0d2FyZQBDZWxzeXMgU3R1ZGlvIFRvb2zBp+F8AAABGklEQVRYhe3UsUpCYRTA8f8pKhpCiNJocSkjkMBarDdocMqb6Ss09SJCQ0NDtLX3KLVle2Bl5h26RnBPgxiXuupn8iFcvrPc4XeGb7jnL97Zoc7vpOiNAsKsKAgEdz4o2HSpXVXU394gOvv5FoWlLjfXH4QqjOvFfItdQ5fq5bG202v8nuJBl8btO6pg06Vy4elrKvNnAWCl0wTApot3XtbmQjp2IfP5DIBNl6N6WR9nVmMXNsMXAEZ5Y4DnDFxO6iV9k0UQ+j/pz3c5DACw6VI73dP1ra/YFz49zAFg08V1wHUgER2YxF0Hhnfg3odwyB2P8ml1YBzvdSAbc6eFyB2behBx1wFDdx1IeAcMPGEd+Ie7DrgOTL0D31h0kzQS2o/lAAAADmVYSWZNTQAqAAAACAAAAAAAAADSU5MAAAAASUVORK5CYII="
+        alt="Excellent Signal"
+        style={iconStyle}
+      />
+    );
+  } else if (signalStrength >= -59) {
+    return (
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAC4jAAAuIwF4pT92AAAAG3RFWHRTb2Z0d2FyZQBDZWxzeXMgU3R1ZGlvIFRvb2zBp+F8AAABI0lEQVRYhe2UvUoDQRRGzzVGq8CCyQNIUgjaKGgjCCabNELqvIG+gJWipT/NdoJEfINAiOQFUgS0ShmEPIFaCCL4ey0SiyUbGRaHFZlphplz5/LBcI+oKkkucQFcABcg8QDBdlELa9OhyylJA8Lt9TMANrlcXVTUq4ZTLeUO8FinfbmF6js2ubTOy+qVx79hcX6fbv1k2MAK36NbP0VaZ756G+GC79NjRwCwyaV55Gtm5WMsIcBTL4V+gk0ujcOSzi5EF7z0UwDY5NLYLWk6+xpZ8HY/A0Bsfjfiuclcgtqm5uciOYOH4W7EI3Ri8l6CnaIWVifM6c1ojuNy5wED/gc8cOxrZvmHOVawyf+5Bwz473kgJrfrAQPuPOA84DyQuAe+ANvax0yZsJTxAAAADmVYSWZNTQAqAAAACAAAAAAAAADSU5MAAAAASUVORK5CYII="
+        alt="Good Signal"
+        style={iconStyle}
+      />
+    );
+  } else if (signalStrength >= -69) {
+    return (
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAC4jAAAuIwF4pT92AAAAG3RFWHRTb2Z0d2FyZQBDZWxzeXMgU3R1ZGlvIFRvb2zBp+F8AAAB20lEQVRYhe2WvS8DYRzHv8/JSaQsRKjRy4CEhNG7/ahGWPwBTOJQES8xWypsBklpCIPUxObdcovF0HQ4kbg2ERYdJLQ/A6G9nIfcr4mlNz35fZLn+Sy/T04QEf7zE3mBvEBe4N8FFsb81FBemDVUClQIIXATT4IA1Ev4+uFdr2Uax64FduaHqbZByRo2901C9bRid2kElHpDnY03ZfCJULTHMo0T1wLbs0NUVZ3OGhYBaBrQEVlZA6VSqLFxZHA9HOMJhAODVFn66ggTTyoAQMan9267LdM4dS2wpQ9QefGLI3xIFgEgyHhg/44nsDneT2Vq0hE+vhYDAGR85uC+yzKNM9cCG6MalTzFbeM0AAXPpV4AgIzPHcV5AgGfRhXKRwuELQkJEgCASsW5FYm0wNZ1vNMyjXPXAotjfpLt+R860GGZxoVrgZ35YaprtO25ZuuAhE+EojyB7dkhctxzv45IUNKBT66HY+2WaVy6FshBB3gCOegATyAHHWizTOPKtUAOOsATCPg0ku058GsHlgEcZN5pf8Ph/DVjd4DLf+jAFFRPy586wOWSDkwiElz9tQNczu4Al7M7wOXsDnD5Dx0gAELSAS7/7oiY9mnklew5AWBxAXjtPxoZ/B30sqRh0DyN+QAAAA5lWElmTU0AKgAAAAgAAAAAAAAA0lOTAAAAAElFTkSuQmCC"
+        alt="Fair Signal"
+        style={iconStyle}
+      />
+    );
+  } else {
+    return (
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAC4jAAAuIwF4pT92AAAAG3RFWHRTb2Z0d2FyZQBDZWxzeXMgU3R1ZGlvIFRvb2zBp+F8AAAA4ElEQVRYhe3QwUoCURiG4fe3RnMWQrpQZlO6Cq8mTRFRr8BFmwiCiG6pq3Ap3UHRNhCEhmKyr4UiiANBcHDzz+ZwzvstHsYkccjPHOAABzjAAQ5wgAMc4AAHnLfb3e3tABa77l+pVo53H80AeE8/AAjZ7XEyVr1Q3BmcNRsk9SpPs2ckEbLbw2ikWEd7v+ailTB/eUOCf/Vmwvz17273w6GibK8DkEXrM2S3u8FApKv8RbyRB+x22+srW37l9qhSWksDdrvp9vS5SHMHJ6dlwAjZbdq5VFw4zh2kP98AhOy/eoXCu2rfPlwAAAAOZVhJZk1NACoAAAAIAAAAAAAAANJTkwAAAABJRU5ErkJggg=="
+        alt="Weak Signal"
+        style={iconStyle}
+      />
+    );
+  }
+};  
