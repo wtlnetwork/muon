@@ -53,12 +53,12 @@ Supported Games:
 * [Rainbow Six: Vegas 2](https://store.steampowered.com/app/15120/Tom_Clancys_Rainbow_Six_Vegas_2/)
 * [Splinter Cell: Chaos Theory](https://store.steampowered.com/app/13570/Tom_Clancys_Splinter_Cell_Chaos_Theory/)
 
-Unsupported: (Further plugin development needed)
+Unsupported:
 * Left 4 Dead 1 & 2
 * Lethal Company
 * Kletka
 
-Untested Selection:
+Community Tested Selection:
 * [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
 
 ## Planned Updates:
