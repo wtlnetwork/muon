@@ -38,9 +38,10 @@ __Here are the plugin options on Decky-loader__
 ## LAN Games:
 __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have a browse here for suggestions!__
 
-**Caution**: As of the release (02/27/2025), a total of 5 games were tested using Muon 0.1.0, and some games may not work as intended.
-Games with legacy browser searches will work, but some games that use an alternative method of scanning for host servers may not function properly.
-We are working on ensuring that the plugin works with every possible LAN game.
+**Caution**:
+**Update 03/14/2025:** In 2008, Steam introduced Steamworks, a DRM protection API that includes features like Steam Bind, which encrypts parts of the game’s code and verifies ownership through the Steam client. Attempting to bypass this system, which in theroy can unlock tons of LAN games to be played offline will run the risk of accounts being banned as a result.
+Given these risks, the safest approach is to focus on games that have been tested and verified to work offline without requiring Steam Bind. 
+For offline LAN games specifically, the Steam Store of LAN Games group can help identify titles that are compatible with offline play and do not rely on Steamworks or Steam Bind for verification.
 
 Testing waiting room:
 * Halo: The Master Chief Collection
@@ -58,7 +59,7 @@ Unsupported: (Further plugin development needed)
 * Kletka
 
 Untested Selection:
-* [Steam Store of LAN Games](https://store.steampowered.com/category/multiplayer_lan/)
+* [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
 
 ## Planned Updates:
 
