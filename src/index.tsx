@@ -12,7 +12,7 @@ import {
   call
 } from "@decky/api";
 import { useState, useEffect } from "react";
-import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
+import { FaWifi, FaSpinner, FaCog, FaBan } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
 
@@ -23,6 +23,7 @@ const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
 const getConnectedDevices = callable<[], any>("get_connected_devices");
+const kickMac = callable<[string], boolean>("kick_mac");
 
 
 declare global {
@@ -44,6 +45,15 @@ function Content() {
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
     return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
+  };
+
+  const handleKickDevice = async (mac: string) => {
+    const success = await kickMac(mac);
+    if (success) {
+      toaster.toast({ title: "Device Kicked", body: `Successfully kicked ${mac}` });
+    } else {
+      toaster.toast({ title: "Error", body: `Failed to kick ${mac}` });
+    }
   };
   
   useEffect(() => {
@@ -248,26 +258,38 @@ function Content() {
       {/* Connected Devices Section */}
       {hotspotStatus === "stop" && (
         <PanelSection title="Connected Devices">
-          {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
-            connectedDevices.map((device, index) => (
-              <PanelSectionRow key={index}>
-                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <div style={{ width: "50px", height: "50px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    {getSignalIcon(device.signal_strength, 32)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
-                    <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
-                  </div>
+        {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
+          connectedDevices.map((device, index) => (
+            <PanelSectionRow key={index}>
+              <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                <div style={{ width: "50px", height: "50px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  {getSignalIcon(device.signal_strength, 32)}
                 </div>
-              </PanelSectionRow>
-            ))
-          ) : (
-            <PanelSectionRow>
-              <p>No devices connected.</p>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
+                  <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
+                </div>
+                <button
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    marginLeft: "10px",
+                    marginRight: "10px"
+                  }}
+                  onClick={() => handleKickDevice(device.mac)}
+                  title="Ban Device"
+                >
+                  <FaBan color="red" size={24} />
+                </button>
+              </div>
             </PanelSectionRow>
-          )}
-        </PanelSection>
+          ))
+        ) : (
+          <PanelSectionRow>
+            <p>No devices connected.</p>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
       )}
   
       {/* SSID/Passphrase and Settings Section */}
