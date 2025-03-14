@@ -21,7 +21,7 @@ const stopHotspot = callable<[], void>("stop_hotspot");
 const checkDependencies = callable<[], Record<string, boolean>>("check_dependencies");
 const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
-const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
+const installDependencies = callable<[], { success: boolean; error?: string }>("install_dependencies");
 const getConnectedDevices = callable<[], any>("get_connected_devices");
 
 
@@ -183,7 +183,7 @@ function Content() {
               setInstallingDependencies(true);
               toaster.toast({ title: "Installing Dependencies", body: "Please wait..." });
   
-              const result = await installDependencies(missingDnsmasq, missingHostapd);
+              const result = await installDependencies();
               if (result.success) {
                 toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
   

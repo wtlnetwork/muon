@@ -226,18 +226,14 @@ class Plugin:
         result = await self.run_command(script_path)
         return result
 
-    async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
+    async def install_dependencies(self):
         """Installs dnsmasq and hostapd using a shell script."""
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
-
-        # Convert booleans to strings for shell script compatibility
-        dnsmasq_flag = "true" if install_dnsmasq else "false"
-        hostapd_flag = "true" if install_hostapd else "false"
 
         decky.logger.info("Installing dependencies via Shell Script")
 
         result = await self.run_command(
-            f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
+            f"bash {script_path}"
         )
 
         if "Dependencies installed successfully" in result:
@@ -409,11 +405,18 @@ class Plugin:
 
     # UTILITY METHODS
     async def run_command(self, command: str, check: bool = False):
+        env = os.environ.copy()  # Copy the current environment
+        env["LD_LIBRARY_PATH"] = "/usr/lib:/lib"  # Ensure proper library paths
+        env["PATH"] += ":/usr/local/sbin:/usr/local/bin:/usr/bin:/sbin:/bin"  # Add missing paths
+
         result = await asyncio.create_subprocess_shell(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env  # Pass modified env
         )
         stdout, stderr = await result.communicate()
-        decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
+
+        if stderr:
+            decky.logger.error(f"Command error: {stderr.decode().strip()}")
+
         return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):

@@ -1,91 +1,65 @@
 #!/bin/bash
 
-# Boolean flags to determine if dnsmasq and hostapd should be installed
-INSTALL_DNSMASQ=$1
-INSTALL_HOSTAPD=$2
-
-echo "Installing dependencies..."
-echo "Install dnsmasq: $INSTALL_DNSMASQ"
-echo "Install hostapd: $INSTALL_HOSTAPD"
+# Check if both packages are already installed. If so, exit.
+if pacman -Qi hostapd &>/dev/null && pacman -Qi dnsmasq &>/dev/null; then
+    exit 0
+fi
 
 OS_ID="ID=steamos"
 VERSION_ID=$(grep VERSION_ID /etc/os-release)
+
+# Extension details
 EXTENSION_NAME="muon-network-tools"
-EXTENSION_DIR="/tmp/$EXTENSION_NAME"
+EXTENSION_DIR="./$EXTENSION_NAME"
 EXTENSION_RELEASE="$EXTENSION_DIR/usr/lib/extension-release.d/extension-release.$EXTENSION_NAME"
-EXTENSION_SRC="/var/lib/extensions/$EXTENSION_NAME.raw"
-EXTENSION_TMP="./$EXTENSION_NAME.raw"
+EXTENSION_SRC="$PWD/$EXTENSION_NAME.raw"
+EXTENSION_DEST="/var/lib/extensions/$EXTENSION_NAME.raw"
 
-# Ensure the extension directory exists
-mkdir -p "$EXTENSION_DIR"
+# Packages to include
+PACKAGES=("hostapd" "dnsmasq")
+
+# Create extension directory
 mkdir -p "$EXTENSION_DIR/usr/lib/extension-release.d/"
-mkdir -p "$EXTENSION_DIR/var/lib/pacman"
+touch "$EXTENSION_RELEASE"
 
-ERROR=false
+# Function to fetch and extract packages
+fetch_package() {
+    local package_name=$1
 
-# Initialize Pacman for the extension
-echo "Initializing Pacman database inside the extension..."
-sudo pacman-key --init
-sudo pacman-key --populate archlinux holo
-PACMAN_CMD="sudo pacman --noconfirm --needed --root $EXTENSION_DIR --dbpath $EXTENSION_DIR/var/lib/pacman -Sy"
+    if ! pacman -Sw --noconfirm "$package_name" 2>&1; then
+        exit 1
+    fi
 
-# Install dnsmasq if needed
-if [ "$INSTALL_DNSMASQ" == "true" ]; then
-    echo "Installing dnsmasq and dependencies via Pacman..."
-    $PACMAN_CMD dnsmasq
-    if [ $? -ne 0 ]; then
-        echo "Failed to install dnsmasq."
-        ERROR=true
+    local package_file
+    package_file=$(ls /var/cache/pacman/pkg/${package_name}-*.pkg.tar.zst 2>/dev/null | head -n 1)
+
+    if [ ! -f "$package_file" ]; then
+        exit 1
+    fi
+
+    tar --use-compress-program=unzstd -xvf "$package_file" -C "$EXTENSION_DIR" 2>&1
+}
+
+# Fetch all required packages
+for pkg in "${PACKAGES[@]}"; do
+    fetch_package "$pkg"
+done
+
+# Rebuild the extension if the OS version doesn't match
+if [ ! $(grep -q "$VERSION_ID" "$EXTENSION_RELEASE") ]; then
+    rm -f "$EXTENSION_SRC" "$EXTENSION_RELEASE"
+    echo -e "$OS_ID\n$VERSION_ID" > "$EXTENSION_RELEASE"
+    chown -R root:root "$EXTENSION_DIR"
+
+    if ! mksquashfs "$EXTENSION_DIR" "$EXTENSION_SRC" -quiet 2>&1; then
+        exit 1
     fi
 fi
 
-# Install hostapd if needed
-if [ "$INSTALL_HOSTAPD" == "true" ]; then
-    echo "Installing hostapd and dependencies via Pacman..."
-    $PACMAN_CMD hostapd
-    if [ $? -ne 0 ]; then
-        echo "Failed to install hostapd."
-        ERROR=true
-    fi
-fi
-
-# Ensure the extension release file exists
-echo "Creating extension release file..."
-echo "$OS_ID" > "$EXTENSION_RELEASE"
-echo "$VERSION_ID" >> "$EXTENSION_RELEASE"
-
-# Build the system extension
-echo "Building system extension..."
-rm -f "$EXTENSION_TMP"
-mksquashfs "$EXTENSION_DIR" "$EXTENSION_TMP" -comp xz -b 256K -Xdict-size 64K
-echo "SquashFS extension created successfully."
-
-# Move extension to the correct location
 mkdir -p /var/lib/extensions
-mv -f "$EXTENSION_TMP" "$EXTENSION_SRC"
-echo "Extension moved to $EXTENSION_SRC"
+ln -sf "$EXTENSION_SRC" "$EXTENSION_DEST"
 
-# Clean up extracted files to avoid clutter
-echo "Cleaning up temporary files..."
-rm -rf "$EXTENSION_DIR"
-
-# Enable and refresh system extensions
-echo "Refreshing systemd-sysext..."
-systemd-sysext refresh
-
-# Check if systemd-sysext loaded it
-echo "Checking systemd-sysext status..."
-systemd-sysext status
-
-# Debugging: Check installed files
-echo "Checking installed dependencies..."
-ls -l /var/lib/extensions/ | grep "$EXTENSION_NAME"
-
-# Final check
-if [ "$ERROR" == "true" ]; then
-    echo "One or more dependencies failed to install."
+# Ensure systemd-sysext recognizes the extension
+if ! systemd-sysext merge 2>&1; then
     exit 1
-else
-    echo "Dependencies installed successfully."
-    exit 0
 fi
