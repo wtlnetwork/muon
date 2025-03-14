@@ -200,37 +200,40 @@ class Plugin:
             return False  # Default to not blocked if there's an error
 
     # DEPENDENCY MANAGEMENT METHODS
-    async def check_dependencies(self):
-        """Ensure required dependencies are installed."""
-        statuses = {}
-        for dep in ["dnsmasq", "hostapd"]:
-            result = await self.run_command(f"which {dep}")
-            statuses[dep] = bool(result)
-            if not result:
-                decky.logger.error(f"ERROR: `{dep}` is not installed.")
-        decky.logger.info("Dependency statuses: " + str(statuses))
-        return statuses
+    async def install_nix(self) -> bool:
+        """Install dependencies using the Nix package manager."""
+        decky.logger.info("Installing Nix package manager...")
 
-    async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
-        """Installs dnsmasq and hostapd using a shell script."""
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
+        script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_nix.sh")
+        result = await self.run_command(f"bash {script_path}")
 
-        # Convert booleans to strings for shell script compatibility
-        dnsmasq_flag = "true" if install_dnsmasq else "false"
-        hostapd_flag = "true" if install_hostapd else "false"
+        if "Nix installed successfully" in result:
+            decky.logger.info("Nix installed successfully.")
+            return True
+        else:
+            decky.logger.error("Failed to install Nix.")
+            return False
 
-        decky.logger.info("Installing dependencies via Shell Script")
-
-        result = await self.run_command(
-            f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
-        )
-
-        if "Dependencies installed successfully" in result:
-            decky.logger.info("Dependencies installed successfully.")
-            return {"success": True}
+    async def check_dependency(self, package: str) -> bool:
+        """Check if a specific package is installed."""
+        result = await self.run_command(f"which {package}")
+        if not result:
+            decky.logger.error(f"ERROR: `{package}` is not installed.")
+            return False
         
-        decky.logger.error("Failed to install dependencies.")
-        return {"success": False, "error": "Check logs for details"}
+        decky.logger.info(f"`{package}` is installed.")
+        return True
+
+    async def install_dependency(self, package: str) -> bool:
+        decky.logger.info(f"Installing dependency: {package}")
+        script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependency.sh")
+        result = await self.run_command(f"bash {script_path} {package}")
+        if not result:
+            decky.logger.error(f"ERROR: `{package}` could not be installed.")
+            return False
+        
+        decky.logger.info(f"`{package}` is now installed.")
+        return True
 
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
