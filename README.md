@@ -58,7 +58,7 @@ Unsupported:
 * Lethal Company
 * Kletka
 
-Community Tested Selection:
+Community Tested Selection (Not all games will work with Muon):
 * [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
 
 ## Planned Updates:
