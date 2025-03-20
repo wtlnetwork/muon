@@ -486,8 +486,10 @@ class Plugin:
 
     # UTILITY METHODS
     async def run_command(self, command: str, check: bool = False):
-        result = await asyncio.create_subprocess_shell(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = "/usr/lib/libreadline.so.8"
+        result = await asyncio.create_subprocess_exec(
+            "/bin/bash", "-c", command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
         )
         stdout, stderr = await result.communicate()
         decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
