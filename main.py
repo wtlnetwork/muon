@@ -161,9 +161,14 @@ class Plugin:
         decky.logger.info("Starting Hotspot")
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_hotspot.sh")
 
-        result = await self.run_command(
-            f"bash {script_path} {self.wifi_interface} {self.ip_address} {ssid} {passphrase}"
-        )
+        result = await self.run_command([
+            "bash",
+            script_path,
+            self.wifi_interface,
+            self.ip_address,
+            ssid,
+            passphrase
+        ])
 
         if "Hotspot started successfully" in result:
             self.hotspot_active = True
@@ -485,14 +490,22 @@ class Plugin:
 
 
     # UTILITY METHODS
-    async def run_command(self, command: str, check: bool = False):
+    async def run_command(self, command, check: bool = False):
         env = os.environ.copy()
         env["LD_PRELOAD"] = "/usr/lib/libreadline.so.8"
-        result = await asyncio.create_subprocess_exec(
-            "/bin/bash", "-c", command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-        )
+
+        if isinstance(command, list):
+            result = await asyncio.create_subprocess_exec(
+                *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+            )
+        else:
+            result = await asyncio.create_subprocess_exec(
+                "/bin/bash", "-c", command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+            )
+
         stdout, stderr = await result.communicate()
-        decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
+        if stderr:
+            decky.logger.error(f"Command error: {stderr.decode().strip()}")
         return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):
