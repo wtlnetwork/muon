@@ -1,5 +1,7 @@
 import {
   ButtonItem,
+  DialogButton,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   TextField,
@@ -12,9 +14,10 @@ import {
   call
 } from "@decky/api";
 import { useState, useEffect } from "react";
-import { FaWifi, FaSpinner, FaCog, FaBan } from "react-icons/fa";
+import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
+import { BootIcon } from "./banned_devices";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
@@ -269,18 +272,31 @@ function Content() {
                   <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
                   <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
                 </div>
-                <button
+                <Focusable
                   style={{
-                    width: "32px",
-                    height: "32px",
-                    marginLeft: "10px",
-                    marginRight: "10px"
+                    maxHeight: "32px", 
+                    display: "inline-flex",
+                    alignItems: "center",
                   }}
-                  onClick={() => handleKickDevice(device.mac)}
-                  title="Ban Device"
+                  flow-children="horizontal"
                 >
-                  <FaBan color="red" size={24} />
-                </button>
+                  <DialogButton
+                    onClick={() => handleKickDevice(device.mac)}
+                    style={{
+                      width: "32px",  // Force a square shape
+                      height: "32px",
+                      padding: 0,  // Remove extra padding causing width issues
+                      marginRight: "16px", // Slightly shift it left
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "32px", // Ensures it stays square
+                      maxWidth: "32px",
+                    }}
+                  >
+                    <BootIcon />
+                  </DialogButton>
+                </Focusable>
               </div>
             </PanelSectionRow>
           ))

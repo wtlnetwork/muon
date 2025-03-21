@@ -431,7 +431,9 @@ class Plugin:
             return False
         
     async def retrieve_ban_list(self) -> list:
-        """Retrieves the list of banned MAC addresses from hostapd.deny."""
+        VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+        EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
+        """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
         deny_file = "/etc/hostapd/hostapd.deny"
 
         try:
@@ -440,9 +442,13 @@ class Plugin:
                 return []
 
             with open(deny_file, "r") as f:
-                mac_addresses = [line.strip() for line in f if line.strip()]
+                mac_addresses = [
+                    line.strip()
+                    for line in f
+                    if VALID_MAC_REGEX.match(line.strip()) and line.strip() not in EXCLUDED_MACS
+                ]
 
-            decky.logger.info(f"Retrieved {len(mac_addresses)} banned MAC addresses.")
+            decky.logger.info(f"Retrieved {len(mac_addresses)} valid banned MAC addresses.")
             return mac_addresses
 
         except Exception as e:
