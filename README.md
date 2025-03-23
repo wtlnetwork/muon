@@ -45,6 +45,11 @@ For offline LAN games specifically, the Steam Store of LAN Games group can help 
 
 Testing waiting room:
 * Halo: The Master Chief Collection
+* Left 4 Dead 1 & 2 (Re-Test)
+* Resident Evil 5
+* Killing Floor 1 & 2
+* Stardew Valley
+* Lost Planet 2
 
 Supported Games: 
 * [Quake III Arena](https://store.steampowered.com/app/2200/Quake_III_Arena/)
@@ -54,18 +59,18 @@ Supported Games:
 * [Splinter Cell: Chaos Theory](https://store.steampowered.com/app/13570/Tom_Clancys_Splinter_Cell_Chaos_Theory/)
 
 Unsupported:
-* Left 4 Dead 1 & 2
 * Lethal Company
 * Kletka
+* Call of Duty 4 (Punkbuster Related)
 
 Community Tested Selection (Not all games will work with Muon):
 * [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
 
 ## Planned Updates:
 
-* UI Improvements (Currently Active)
-* Steam Deck OLED Support
-* Advanced Settings Tab for Host
+* UI Improvements ✓ (Released in 1.4)
+* Blocking Devices and List ✓ (Released in 1.4)
+* Nix Intergration
 * ???
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
