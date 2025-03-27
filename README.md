@@ -52,7 +52,7 @@ Testing waiting room:
 * Lost Planet 2
 
 Offical Muon Steam Group: 
-* [Muon Verified]([https://store.steampowered.com/app/2200/Quake_III_Arena/](https://steamcommunity.com/groups/muonverified))
+* [Muon Verified](https://steamcommunity.com/groups/muonverified)
 
 
 Community Tested Selection (Not all games will work with Muon):
