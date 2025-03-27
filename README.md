@@ -51,7 +51,7 @@ Testing waiting room:
 * Stardew Valley
 * Lost Planet 2
 
-Offical Muon Steam Group: 
+Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
 
 
