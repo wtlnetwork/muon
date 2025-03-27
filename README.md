@@ -51,17 +51,9 @@ Testing waiting room:
 * Stardew Valley
 * Lost Planet 2
 
-Supported Games: 
-* [Quake III Arena](https://store.steampowered.com/app/2200/Quake_III_Arena/)
-* [Garry's Mod](https://store.steampowered.com/app/4000/Garrys_Mod/)
-* [Counter-Strike: Source](https://store.steampowered.com/app/240/CounterStrike_Source/)
-* [Rainbow Six: Vegas 2](https://store.steampowered.com/app/15120/Tom_Clancys_Rainbow_Six_Vegas_2/)
-* [Splinter Cell: Chaos Theory](https://store.steampowered.com/app/13570/Tom_Clancys_Splinter_Cell_Chaos_Theory/)
+Offical Muon Steam Group: 
+* [Muon Verified]([https://store.steampowered.com/app/2200/Quake_III_Arena/](https://steamcommunity.com/groups/muonverified))
 
-Unsupported:
-* Lethal Company
-* Kletka
-* Call of Duty 4 (Punkbuster Related)
 
 Community Tested Selection (Not all games will work with Muon):
 * [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
