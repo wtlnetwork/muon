@@ -1,8 +1,9 @@
 import { Field, ModalRoot, showModal, Toggle } from "@decky/ui";
 import { useState } from "react";
 import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
-import { FaCheck, FaTimes } from "react-icons/fa";
+import { FaCheck, FaTimes, FaBan } from "react-icons/fa";
 import { callable, toaster } from "@decky/api";
+import { showBannedDevicesModal } from "./banned_devices";
 
 
 export const showWifiSettingsModal = (
@@ -90,6 +91,11 @@ const WifiSettingsModal = ({
         </Field>
       </PanelSectionRow>
       {error && <p style={{ color: "red" }}>{error}</p>}
+      <PanelSectionRow>
+        <ButtonItem layout="inline" onClick={showBannedDevicesModal}>
+          <FaBan /> Manage Banned Devices
+        </ButtonItem>
+      </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem layout="inline" onClick={handleSave}>
           <FaCheck /> Save

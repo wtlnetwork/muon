@@ -161,9 +161,14 @@ class Plugin:
         decky.logger.info("Starting Hotspot")
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_hotspot.sh")
 
-        result = await self.run_command(
-            f"bash {script_path} {self.wifi_interface} {self.ip_address} {ssid} {passphrase}"
-        )
+        result = await self.run_command([
+            "bash",
+            script_path,
+            self.wifi_interface,
+            self.ip_address,
+            ssid,
+            passphrase
+        ])
 
         if "Hotspot started successfully" in result:
             self.hotspot_active = True
@@ -310,6 +315,11 @@ class Plugin:
         else:
             decky.logger.error("Failed to start DHCP Server.")
 
+    async def get_ip_address(self) -> str:
+        return self.ip_address
+
+    
+
     # SUSPENSION METHODS
     async def suspend_ap(self):
         if self.hotspot_active:
@@ -318,6 +328,7 @@ class Plugin:
 
     async def resume_ap(self):
         decky.logger.info("Resuming from suspension...")
+
 
     # CLIENT LIST METHODS
     async def get_connected_devices(self):
@@ -389,16 +400,123 @@ class Plugin:
         decky.logger.info(f"Connected Devices: {connected_devices_json}")
 
         return connected_devices_json
+    
+    # CLIENT BLACKLISTING METHODS
+    async def kick_mac(self, mac_address: str) -> bool:
+        """Kick and block a MAC address from the hotspot."""
+        try:
+            # Step 1: Deauthenticate the device (Kick it off)
+            result = await self.run_command(f"hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
 
+            if not result or "OK" not in result:
+                decky.logger.error(f"Failed to kick MAC address: {mac_address}. Response: {result}")
+                return False
+
+            decky.logger.info(f"Successfully kicked MAC address: {mac_address}")
+
+            # Step 2: Add MAC to deny list in hostapd.deny
+            hostapd_conf = "/etc/hostapd/hostapd.deny"
+            with open(hostapd_conf, "a") as f:
+                f.write(f"\n{mac_address}\n")
+
+            decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
+
+            # Step 3: Reload hostapd configuration
+            reload_result = await self.run_command("sudo systemctl reload hostapd")
+
+            if reload_result.strip() == "":  # Success if output is empty
+                decky.logger.info("Reloaded hostapd configuration successfully.")
+                return True
+            else:
+                decky.logger.error(f"Failed to reload hostapd configuration. Output: {reload_result}")
+                return False
+
+        except Exception as e:
+            decky.logger.error(f"Error while processing MAC address {mac_address}: {e}")
+            return False
+        
+    async def retrieve_ban_list(self) -> list:
+        VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+        EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
+        """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
+        deny_file = "/etc/hostapd/hostapd.deny"
+
+        try:
+            if not os.path.exists(deny_file):
+                decky.logger.warning("Ban list file does not exist. Returning empty list.")
+                return []
+
+            with open(deny_file, "r") as f:
+                mac_addresses = [
+                    line.strip()
+                    for line in f
+                    if VALID_MAC_REGEX.match(line.strip()) and line.strip() not in EXCLUDED_MACS
+                ]
+
+            decky.logger.info(f"Retrieved {len(mac_addresses)} valid banned MAC addresses.")
+            return mac_addresses
+
+        except Exception as e:
+            decky.logger.error(f"Error retrieving banned MAC addresses: {e}")
+            return []
+
+    async def unban_mac_address(self, mac_address: str) -> bool:
+        """Removes a MAC address from hostapd.deny and reloads hostapd."""
+        deny_file = "/etc/hostapd/hostapd.deny"
+
+        try:
+            if not os.path.exists(deny_file):
+                decky.logger.warning("Ban list file does not exist. Nothing to unban.")
+                return False
+
+            # Read the file and filter out the MAC address
+            with open(deny_file, "r") as f:
+                lines = f.readlines()
+
+            new_lines = [line for line in lines if line.strip().lower() != mac_address.lower()]
+
+            if len(new_lines) == len(lines):  # No changes means MAC wasn't found
+                decky.logger.warning(f"MAC address {mac_address} not found in ban list.")
+                return False
+
+            # Write back the updated list
+            with open(deny_file, "w") as f:
+                f.writelines(new_lines)
+
+            decky.logger.info(f"Unbanned MAC address: {mac_address}")
+
+            # Reload hostapd to apply changes
+            reload_result = await self.run_command("sudo systemctl reload hostapd")
+
+            if reload_result.strip() == "":  # Success if no output
+                decky.logger.info("Reloaded hostapd configuration successfully.")
+                return True
+            else:
+                decky.logger.error(f"Failed to reload hostapd. Output: {reload_result}")
+                return False
+
+        except Exception as e:
+            decky.logger.error(f"Error unbanning MAC address {mac_address}: {e}")
+            return False
 
 
     # UTILITY METHODS
-    async def run_command(self, command: str, check: bool = False):
-        result = await asyncio.create_subprocess_shell(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+    async def run_command(self, command, check: bool = False):
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = "/usr/lib/libreadline.so.8"
+
+        if isinstance(command, list):
+            result = await asyncio.create_subprocess_exec(
+                *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+            )
+        else:
+            result = await asyncio.create_subprocess_exec(
+                "/bin/bash", "-c", command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+            )
+
         stdout, stderr = await result.communicate()
-        decky.logger.error(f"Command error: {stderr.decode().strip()}") if stderr else None
+        if stderr:
+            decky.logger.error(f"Command error: {stderr.decode().strip()}")
         return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):

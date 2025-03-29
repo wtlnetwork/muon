@@ -1,5 +1,7 @@
 import {
   ButtonItem,
+  DialogButton,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   TextField,
@@ -15,6 +17,7 @@ import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
+import { BootIcon } from "./banned_devices";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
@@ -23,7 +26,8 @@ const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
 const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
 const getConnectedDevices = callable<[], any>("get_connected_devices");
-
+const kickMac = callable<[string], boolean>("kick_mac");
+const getIpAddress = callable<[], string>("get_ip_address");
 
 declare global {
   interface Window {
@@ -32,7 +36,7 @@ declare global {
 }
 
 function Content() {
-  const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
+  const [hotspotStatus, setHotspotStatus] = useState<"running" | "loading" | "stopped">("stopped");
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
@@ -40,10 +44,33 @@ function Content() {
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
+  const [ipAddress, setIpAddress] = useState<string>("");
+
+  useEffect(() => {
+    const fetchIp = async () => {
+      try {
+        const ip = await getIpAddress();
+        setIpAddress(ip);
+      } catch (err) {
+        console.error("Failed to fetch IP address", err);
+        setIpAddress("Unknown");
+      }
+    };
+    fetchIp();
+  }, []);
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
     return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
+  };
+
+  const handleKickDevice = async (mac: string) => {
+    const success = await kickMac(mac);
+    if (success) {
+      toaster.toast({ title: "Device Kicked", body: `Successfully kicked ${mac}` });
+    } else {
+      toaster.toast({ title: "Error", body: `Failed to kick ${mac}` });
+    }
   };
   
   useEffect(() => {
@@ -70,7 +97,7 @@ function Content() {
         setDependencies(deps);
   
         const hotspotActive = await isHotspotActive();
-        setHotspotStatus(hotspotActive ? "stop" : "start");
+        setHotspotStatus(hotspotActive ? "running" : "stopped");
 
         const rfkillBlocked = await callable<[], boolean>("is_rfkill_blocking_wlan")();
         setIsBlocked(rfkillBlocked);
@@ -102,7 +129,7 @@ function Content() {
     };
   
     // Poll every 5 seconds when hotspot is running
-    if (hotspotStatus === "stop") {
+    if (hotspotStatus === "running") {
       fetchDevices(); // Fetch immediately when hotspot starts
   
       const interval = setInterval(() => {
@@ -130,7 +157,9 @@ function Content() {
           }
         `}
       </style>
-      <FaSpinner style={spinnerStyle} /> Working...
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        <FaSpinner style={{ ...spinnerStyle }} />
+      </span>
     </>
   );
   
@@ -143,13 +172,13 @@ function Content() {
     setHotspotStatus("loading");
   
     try {
-      if (hotspotStatus === "start") {
+      if (hotspotStatus === "stopped") {
         await startHotspot();
-        setHotspotStatus("stop");
+        setHotspotStatus("running");
         toaster.toast({ title: "Hotspot Started", body: `SSID: ${ssid}` });
       } else {
         await stopHotspot();
-        setHotspotStatus("start");
+        setHotspotStatus("stopped");
         toaster.toast({ title: "Hotspot Stopped", body: "Hotspot has been disabled." });
       }
     } catch (error) {
@@ -157,7 +186,7 @@ function Content() {
     } finally {
       // Ensure we check the current status before re-enabling the button
       const hotspotActive = await isHotspotActive();
-      setHotspotStatus(hotspotActive ? "stop" : "start");
+      setHotspotStatus(hotspotActive ? "running" : "stopped");
     }
   };
   
@@ -191,7 +220,7 @@ function Content() {
                 setDependencies(updatedDeps);
   
                 const hotspotActive = await isHotspotActive();
-                setHotspotStatus(hotspotActive ? "stop" : "start");
+                setHotspotStatus(hotspotActive ? "running" : "stopped");
               } else {
                 toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
               }
@@ -217,27 +246,62 @@ function Content() {
       {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
         <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={handleClick}
-            disabled={hotspotStatus === "loading" || isBlocked}
-          >
-            {hotspotStatus === "loading" ? (
-              <>
-                <Spinner />
-              </>
-            ) : hotspotStatus === "start" ? (
-              <>
-                <FaWifi /> Start Hotspot
-              </>
-            ) : (
-              <>
-                <FaWifi /> Stop Hotspot
-              </>
-            )}
-          </ButtonItem>
-        </PanelSectionRow>
-  
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  color:
+                    hotspotStatus === "running"
+                      ? "#2e7d32"
+                      : hotspotStatus === "stopped"
+                      ? "#c62828"
+                      : undefined,
+                }}
+              >
+                {hotspotStatus === "running"
+                  ? "Hotspot running"
+                  : hotspotStatus === "stopped"
+                  ? "Hotspot stopped"
+                  : "Processing..."}
+              </div>
+
+              {hotspotStatus === "running" && (
+                <div style={{ fontSize: "13px", color: "#aaa" }}>
+                  <b>Host IP</b>: {ipAddress}
+                </div>
+              )}
+            </div>
+              <DialogButton
+                onClick={handleClick}
+                disabled={hotspotStatus === "loading"}
+                style={{
+                  height: "36px",
+                  minWidth: "0px",
+                  maxWidth: "80px",
+                  padding: "4px 8px",
+                  marginLeft: "16px",
+                  marginRight: "16px",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {hotspotStatus === "loading" ? (
+                  <Spinner />
+                ) : hotspotStatus === "running" ? (
+                  <>
+                    <FaWifi style={{ marginRight: "6px" }} /> Stop
+                  </>
+                ) : (
+                  <>
+                    <FaWifi style={{ marginRight: "6px" }} /> Start
+                  </>
+                )}
+              </DialogButton>
+          </PanelSectionRow>
         {isBlocked && (
           <PanelSectionRow>
             <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
@@ -246,28 +310,53 @@ function Content() {
       </PanelSection>
   
       {/* Connected Devices Section */}
-      {hotspotStatus === "stop" && (
+      {hotspotStatus === "running" && (
         <PanelSection title="Connected Devices">
-          {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
-            connectedDevices.map((device, index) => (
-              <PanelSectionRow key={index}>
-                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <div style={{ width: "50px", height: "50px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    {getSignalIcon(device.signal_strength, 32)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
-                    <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
-                  </div>
+        {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
+          connectedDevices.map((device, index) => (
+            <PanelSectionRow key={index}>
+              <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                <div style={{ width: "50px", height: "50px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  {getSignalIcon(device.signal_strength, 32)}
                 </div>
-              </PanelSectionRow>
-            ))
-          ) : (
-            <PanelSectionRow>
-              <p>No devices connected.</p>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: "bold", fontSize: "14px" }}>{device.hostname}</div>
+                  <div style={{ fontSize: "12px", color: "#888" }}>{device.ip}</div>
+                </div>
+                <Focusable
+                  style={{
+                    maxHeight: "32px", 
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                  flow-children="horizontal"
+                >
+                  <DialogButton
+                    onClick={() => handleKickDevice(device.mac)}
+                    style={{
+                      width: "32px",  // Force a square shape
+                      height: "32px",
+                      padding: 0,  // Remove extra padding causing width issues
+                      marginRight: "16px", // Slightly shift it left
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "32px", // Ensures it stays square
+                      maxWidth: "32px",
+                    }}
+                  >
+                    <BootIcon />
+                  </DialogButton>
+                </Focusable>
+              </div>
             </PanelSectionRow>
-          )}
-        </PanelSection>
+          ))
+        ) : (
+          <PanelSectionRow>
+            <p>No devices connected.</p>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
       )}
   
       {/* SSID/Passphrase and Settings Section */}

@@ -96,6 +96,7 @@ rsn_pairwise=CCMP
 # Control interface for hostapd_cli communication
 ctrl_interface=$CTRL_INTERFACE_DIR
 ctrl_interface_group=0
+deny_mac_file=/etc/hostapd/hostapd.deny
 EOT
 echo "Hostapd configuration generated."
 
