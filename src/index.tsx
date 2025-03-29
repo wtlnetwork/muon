@@ -36,7 +36,7 @@ declare global {
 }
 
 function Content() {
-  const [hotspotStatus, setHotspotStatus] = useState<"running" | "stopped" | "loading">("stopped");
+  const [hotspotStatus, setHotspotStatus] = useState<"running" | "loading" | "stopped">("stopped");
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
@@ -45,19 +45,6 @@ function Content() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
   const [ipAddress, setIpAddress] = useState<string>("");
-  const generateRandomPassword = () => {
-    const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
-  };
-
-  const handleKickDevice = async (mac: string) => {
-    const success = await kickMac(mac);
-    if (success) {
-      toaster.toast({ title: "Device Kicked", body: `Successfully kicked ${mac}` });
-    } else {
-      toaster.toast({ title: "Error", body: `Failed to kick ${mac}` });
-    }
-  };
 
   useEffect(() => {
     const fetchIp = async () => {
@@ -71,6 +58,20 @@ function Content() {
     };
     fetchIp();
   }, []);
+
+  const generateRandomPassword = () => {
+    const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
+  };
+
+  const handleKickDevice = async (mac: string) => {
+    const success = await kickMac(mac);
+    if (success) {
+      toaster.toast({ title: "Device Kicked", body: `Successfully kicked ${mac}` });
+    } else {
+      toaster.toast({ title: "Error", body: `Failed to kick ${mac}` });
+    }
+  };
   
   useEffect(() => {
     const initializeSettings = async () => {
@@ -244,13 +245,7 @@ function Content() {
     <>
       {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
-        {isBlocked ? (
-          <PanelSectionRow>
-            <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
-          </PanelSectionRow>
-        ) : (
-          <PanelSectionRow>
-            <Focusable style={{ display: "flex", alignItems: "center", width: "100%" }} flow-children="horizontal">
+        <PanelSectionRow>
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -306,10 +301,14 @@ function Content() {
                   </>
                 )}
               </DialogButton>
-            </Focusable>
+          </PanelSectionRow>
+        {isBlocked && (
+          <PanelSectionRow>
+            <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
           </PanelSectionRow>
         )}
       </PanelSection>
+  
       {/* Connected Devices Section */}
       {hotspotStatus === "running" && (
         <PanelSection title="Connected Devices">
@@ -335,14 +334,14 @@ function Content() {
                   <DialogButton
                     onClick={() => handleKickDevice(device.mac)}
                     style={{
-                      width: "32px",
+                      width: "32px",  // Force a square shape
                       height: "32px",
-                      padding: 0,
-                      marginRight: "16px",
+                      padding: 0,  // Remove extra padding causing width issues
+                      marginRight: "16px", // Slightly shift it left
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      minWidth: "32px",
+                      minWidth: "32px", // Ensures it stays square
                       maxWidth: "32px",
                     }}
                   >
