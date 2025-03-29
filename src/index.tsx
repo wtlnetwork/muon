@@ -45,7 +45,6 @@ function Content() {
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
   const [ipAddress, setIpAddress] = useState<string>("");
-
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
     return Array.from({ length: 8 }, () => charset[Math.floor(Math.random() * charset.length)]).join("");
@@ -157,7 +156,9 @@ function Content() {
           }
         `}
       </style>
-      <FaSpinner style={spinnerStyle} /> Working...
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        <FaSpinner style={{ ...spinnerStyle }} />
+      </span>
     </>
   );
   
@@ -241,7 +242,6 @@ function Content() {
   
   return (
     <>
-
       {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
         {isBlocked ? (
@@ -250,55 +250,63 @@ function Content() {
           </PanelSectionRow>
         ) : (
           <PanelSectionRow>
-            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: "bold", color: hotspotStatus === "running" ? "#2e7d32" : "#c62828", fontSize: "16px" }}>
-                  {hotspotStatus === "running" ? "Running" : "Stopped"}
-                </div>
-                {hotspotStatus === "running" && (
-                  <div style={{ fontSize: "13px", color: "#aaa" }}>
-                    <b>Host IP</b>: {ipAddress}
-                  </div>
-                )}
-              </div>
-              <Focusable
+            <Focusable style={{ display: "flex", alignItems: "center", width: "100%" }} flow-children="horizontal">
+            <div style={{ flex: 1 }}>
+              <div
                 style={{
-                  height: "40px",
-                  minWidth: "100px",
-                  display: "inline-flex",
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  color:
+                    hotspotStatus === "running"
+                      ? "#2e7d32"
+                      : hotspotStatus === "stopped"
+                      ? "#c62828"
+                      : undefined,
+                }}
+              >
+                {hotspotStatus === "running"
+                  ? "Hotspot running"
+                  : hotspotStatus === "stopped"
+                  ? "Hotspot stopped"
+                  : "Processing..."}
+              </div>
+
+              {hotspotStatus === "running" && (
+                <div style={{ fontSize: "13px", color: "#aaa" }}>
+                  <b>Host IP</b>: {ipAddress}
+                </div>
+              )}
+            </div>
+              <DialogButton
+                onClick={handleClick}
+                disabled={hotspotStatus === "loading"}
+                style={{
+                  height: "36px",
+                  minWidth: "0px",
+                  maxWidth: "80px",
+                  padding: "4px 8px",
+                  marginLeft: "16px",
+                  marginRight: "16px",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                  display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginLeft: "16px",
                 }}
-                flow-children="horizontal"
               >
-                <DialogButton
-                  onClick={handleClick}
-                  disabled={hotspotStatus === "loading"}
-                  style={{
-                    height: "40px",
-                    minWidth: "100px",
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {hotspotStatus === "loading" ? (
-                    <Spinner />
-                  ) : hotspotStatus === "running" ? (
-                    <>
-                      <FaWifi style={{ marginRight: "6px" }} /> Stop
-                    </>
-                  ) : (
-                    <>
-                      <FaWifi style={{ marginRight: "6px" }} /> Start
-                    </>
-                  )}
-                </DialogButton>
-              </Focusable>
-            </div>
+                {hotspotStatus === "loading" ? (
+                  <Spinner />
+                ) : hotspotStatus === "running" ? (
+                  <>
+                    <FaWifi style={{ marginRight: "6px" }} /> Stop
+                  </>
+                ) : (
+                  <>
+                    <FaWifi style={{ marginRight: "6px" }} /> Start
+                  </>
+                )}
+              </DialogButton>
+            </Focusable>
           </PanelSectionRow>
         )}
       </PanelSection>
