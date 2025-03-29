@@ -241,56 +241,67 @@ function Content() {
   
   return (
     <>
-      {/* Connection Status Section */}
-      <PanelSection title="Connection Status">
-        <PanelSectionRow>
-          {hotspotStatus === "running" ? (
-            <div>
-              <div style={{ fontWeight: "bold", color: "#2e7d32", fontSize: "16px" }}>
-                Running
-              </div>
-              <div style={{ fontSize: "13px", color: "#aaa" }}>
-                <b>Host IP</b>: {ipAddress}
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontWeight: "bold", color: "#c62828", fontSize: "16px" }}>
-              Stopped
-            </div>
-          )}
-        </PanelSectionRow>
-      </PanelSection>
+
       {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={handleClick}
-            disabled={hotspotStatus === "loading" || isBlocked}
-          >
-            {hotspotStatus === "loading" ? (
-              <>
-                <Spinner />
-              </>
-            ) : hotspotStatus === "stopped" ? (
-              <>
-                <FaWifi /> Start Hotspot
-              </>
-            ) : (
-              <>
-                <FaWifi /> Stop Hotspot
-              </>
-            )}
-          </ButtonItem>
-        </PanelSectionRow>
-  
-        {isBlocked && (
+        {isBlocked ? (
           <PanelSectionRow>
             <p style={{ color: "red" }}>⚠ Please enable WiFi to use the hotspot.</p>
           </PanelSectionRow>
+        ) : (
+          <PanelSectionRow>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: "bold", color: hotspotStatus === "running" ? "#2e7d32" : "#c62828", fontSize: "16px" }}>
+                  {hotspotStatus === "running" ? "Running" : "Stopped"}
+                </div>
+                {hotspotStatus === "running" && (
+                  <div style={{ fontSize: "13px", color: "#aaa" }}>
+                    <b>Host IP</b>: {ipAddress}
+                  </div>
+                )}
+              </div>
+              <Focusable
+                style={{
+                  height: "40px",
+                  minWidth: "100px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginLeft: "16px",
+                }}
+                flow-children="horizontal"
+              >
+                <DialogButton
+                  onClick={handleClick}
+                  disabled={hotspotStatus === "loading"}
+                  style={{
+                    height: "40px",
+                    minWidth: "100px",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {hotspotStatus === "loading" ? (
+                    <Spinner />
+                  ) : hotspotStatus === "running" ? (
+                    <>
+                      <FaWifi style={{ marginRight: "6px" }} /> Stop
+                    </>
+                  ) : (
+                    <>
+                      <FaWifi style={{ marginRight: "6px" }} /> Start
+                    </>
+                  )}
+                </DialogButton>
+              </Focusable>
+            </div>
+          </PanelSectionRow>
         )}
       </PanelSection>
-  
       {/* Connected Devices Section */}
       {hotspotStatus === "running" && (
         <PanelSection title="Connected Devices">
@@ -316,14 +327,14 @@ function Content() {
                   <DialogButton
                     onClick={() => handleKickDevice(device.mac)}
                     style={{
-                      width: "32px",  // Force a square shape
+                      width: "32px",
                       height: "32px",
-                      padding: 0,  // Remove extra padding causing width issues
-                      marginRight: "16px", // Slightly shift it left
+                      padding: 0,
+                      marginRight: "16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      minWidth: "32px", // Ensures it stays square
+                      minWidth: "32px",
                       maxWidth: "32px",
                     }}
                   >
