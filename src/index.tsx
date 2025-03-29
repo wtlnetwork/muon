@@ -27,7 +27,7 @@ const updateCredentials = callable<[string, string, boolean], void>("update_cred
 const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
 const getConnectedDevices = callable<[], any>("get_connected_devices");
 const kickMac = callable<[string], boolean>("kick_mac");
-
+const getIpAddress = callable<[], string>("get_ip_address");
 
 declare global {
   interface Window {
@@ -36,7 +36,7 @@ declare global {
 }
 
 function Content() {
-  const [hotspotStatus, setHotspotStatus] = useState<"start" | "loading" | "stop">("start");
+  const [hotspotStatus, setHotspotStatus] = useState<"running" | "stopped" | "loading">("stopped");
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
@@ -44,6 +44,7 @@ function Content() {
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
+  const [ipAddress, setIpAddress] = useState<string>("");
 
   const generateRandomPassword = () => {
     const charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -58,6 +59,19 @@ function Content() {
       toaster.toast({ title: "Error", body: `Failed to kick ${mac}` });
     }
   };
+
+  useEffect(() => {
+    const fetchIp = async () => {
+      try {
+        const ip = await getIpAddress();
+        setIpAddress(ip);
+      } catch (err) {
+        console.error("Failed to fetch IP address", err);
+        setIpAddress("Unknown");
+      }
+    };
+    fetchIp();
+  }, []);
   
   useEffect(() => {
     const initializeSettings = async () => {
@@ -83,7 +97,7 @@ function Content() {
         setDependencies(deps);
   
         const hotspotActive = await isHotspotActive();
-        setHotspotStatus(hotspotActive ? "stop" : "start");
+        setHotspotStatus(hotspotActive ? "running" : "stopped");
 
         const rfkillBlocked = await callable<[], boolean>("is_rfkill_blocking_wlan")();
         setIsBlocked(rfkillBlocked);
@@ -115,7 +129,7 @@ function Content() {
     };
   
     // Poll every 5 seconds when hotspot is running
-    if (hotspotStatus === "stop") {
+    if (hotspotStatus === "running") {
       fetchDevices(); // Fetch immediately when hotspot starts
   
       const interval = setInterval(() => {
@@ -156,13 +170,13 @@ function Content() {
     setHotspotStatus("loading");
   
     try {
-      if (hotspotStatus === "start") {
+      if (hotspotStatus === "stopped") {
         await startHotspot();
-        setHotspotStatus("stop");
+        setHotspotStatus("running");
         toaster.toast({ title: "Hotspot Started", body: `SSID: ${ssid}` });
       } else {
         await stopHotspot();
-        setHotspotStatus("start");
+        setHotspotStatus("stopped");
         toaster.toast({ title: "Hotspot Stopped", body: "Hotspot has been disabled." });
       }
     } catch (error) {
@@ -170,7 +184,7 @@ function Content() {
     } finally {
       // Ensure we check the current status before re-enabling the button
       const hotspotActive = await isHotspotActive();
-      setHotspotStatus(hotspotActive ? "stop" : "start");
+      setHotspotStatus(hotspotActive ? "running" : "stopped");
     }
   };
   
@@ -204,7 +218,7 @@ function Content() {
                 setDependencies(updatedDeps);
   
                 const hotspotActive = await isHotspotActive();
-                setHotspotStatus(hotspotActive ? "stop" : "start");
+                setHotspotStatus(hotspotActive ? "running" : "stopped");
               } else {
                 toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
               }
@@ -227,6 +241,25 @@ function Content() {
   
   return (
     <>
+      {/* Connection Status Section */}
+      <PanelSection title="Connection Status">
+        <PanelSectionRow>
+          {hotspotStatus === "running" ? (
+            <div>
+              <div style={{ fontWeight: "bold", color: "#2e7d32", fontSize: "16px" }}>
+                Running
+              </div>
+              <div style={{ fontSize: "13px", color: "#aaa" }}>
+                <b>Host IP</b>: {ipAddress}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontWeight: "bold", color: "#c62828", fontSize: "16px" }}>
+              Stopped
+            </div>
+          )}
+        </PanelSectionRow>
+      </PanelSection>
       {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
         <PanelSectionRow>
@@ -239,7 +272,7 @@ function Content() {
               <>
                 <Spinner />
               </>
-            ) : hotspotStatus === "start" ? (
+            ) : hotspotStatus === "stopped" ? (
               <>
                 <FaWifi /> Start Hotspot
               </>
@@ -259,7 +292,7 @@ function Content() {
       </PanelSection>
   
       {/* Connected Devices Section */}
-      {hotspotStatus === "stop" && (
+      {hotspotStatus === "running" && (
         <PanelSection title="Connected Devices">
         {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
           connectedDevices.map((device, index) => (

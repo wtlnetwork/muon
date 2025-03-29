@@ -315,6 +315,11 @@ class Plugin:
         else:
             decky.logger.error("Failed to start DHCP Server.")
 
+    async def get_ip_address(self) -> str:
+        return self.ip_address
+
+    
+
     # SUSPENSION METHODS
     async def suspend_ap(self):
         if self.hotspot_active:
