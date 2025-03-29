@@ -45,9 +45,6 @@ For offline LAN games specifically, the Steam Store of LAN Games group can help 
 
 Testing waiting room:
 * Halo: The Master Chief Collection
-* Left 4 Dead 1 & 2 (Re-Test)
-* Resident Evil 5
-* Killing Floor 1 & 2
 * Stardew Valley
 * Lost Planet 2
 
