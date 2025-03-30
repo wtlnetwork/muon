@@ -43,17 +43,8 @@ __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have
 Given these risks, the safest approach is to focus on games that have been tested and verified to work offline without requiring Steam Bind. 
 For offline LAN games specifically, the Steam Store of LAN Games group can help identify titles that are compatible with offline play and do not rely on Steamworks or Steam Bind for verification.
 
-Testing waiting room:
-* Halo: The Master Chief Collection
-* Stardew Valley
-* Lost Planet 2
-
 Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
-
-
-Community Tested Selection (Not all games will work with Muon):
-* [Steam Store of LAN Games](https://store.steampowered.com/curator/44868483-Games-for-LAN-%2528Local-Area-Network%2529/)
 
 ## Planned Updates:
 
