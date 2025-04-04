@@ -1,4 +1,4 @@
-# **Muon - Ad-Hoc connection for the Steam Deck LCD**
+# **Muon - Ad-Hoc connection for the Steam Deck**
 
 A decky-loader plugin that creates a WiFi access point for another Steam Deck to connect.
 
@@ -41,16 +41,15 @@ __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have
 **Caution**:
 **Update 03/14/2025:** In 2008, Steam introduced Steamworks, a DRM protection API that includes features like Steam Bind, which encrypts parts of the game’s code and verifies ownership through the Steam client. Attempting to bypass this system, which in theroy can unlock tons of LAN games to be played offline will run the risk of accounts being banned as a result.
 Given these risks, the safest approach is to focus on games that have been tested and verified to work offline without requiring Steam Bind. 
-For offline LAN games specifically, the Steam Store of LAN Games group can help identify titles that are compatible with offline play and do not rely on Steamworks or Steam Bind for verification.
+You'll find a steam group dedicated for filtering games that are playable below:
 
 Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
 
 ## Planned Updates:
 
-* UI Improvements ✓ (Released in 1.4)
-* Blocking Devices and List ✓ (Released in 1.4)
-* Nix Intergration
+* Nix Intergration (Seeking assistance)
+* Create custom Host IP address in Wi-Fi settings
 * ???
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
