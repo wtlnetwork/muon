@@ -28,20 +28,38 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 **[BE UP-TO-DATE WITH THE NEWEST RELEASES!](https://github.com/wtlnetwork/muon/releases)**
 
 ## The Plugin:
-__Here are the plugin options on Decky-loader__
+__Here are a sample of games verified for Muon!__
 
-| The Main Menu | Active Ad-Hoc | Wi-Fi Settings |
-|------------|-------------------------|----------------|
-| <img src="https://i.imgur.com/jyHkPzC.png" alt="The Plugin" width="250"/> | <img src="https://i.imgur.com/5v7GvP7.png" alt="Establishing Connection" width="250"/> | <img src="https://i.imgur.com/dQcaU20.png" alt="Wi-Fi Settings" width="443"/> |
-| Shows your SSID and Passphrase | Your Ad-Hoc connection is established! | Wi-Fi Settings to change SSID, Passphrase and save Credentials |
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<body>
+    <table>
+        <tr>
+            <td>GARRY'S MOD</td>
+            <td>RAINBOW SIX: VEGAS 2</td>
+        </tr>
+        <tr>
+            <td><img src="https://i.imgur.com/xBv6Ue5.gif" alt="Placeholder GIF"></td>
+            <td><img src="https://i.imgur.com/WXI0BUw.gif" alt="Placeholder GIF"></td>
+        </tr>
+        <tr>
+            <td><img src="https://i.imgur.com/iqdeSSt.gif" alt="Placeholder GIF"></td>
+            <td><img src="https://via.placeholder.com/150x100.gif" alt="Placeholder GIF"></td>
+        </tr>
+        <tr>
+            <td>QUAKE III ARENA</td>
+            <td>Left 4 Dead (Coming Soon)</td>
+        </tr>
+    </table>
+</body>
+</html>
 
 ## LAN Games:
 __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have a browse here for suggestions!__
 
-**Caution**:
-**Update 03/14/2025:** In 2008, Steam introduced Steamworks, a DRM protection API that includes features like Steam Bind, which encrypts parts of the game’s code and verifies ownership through the Steam client. Attempting to bypass this system, which in theroy can unlock tons of LAN games to be played offline will run the risk of accounts being banned as a result.
-Given these risks, the safest approach is to focus on games that have been tested and verified to work offline without requiring Steam Bind. 
-You'll find a steam group dedicated for filtering games that are playable below:
+**Need help setting up Muon? Here is the Wiki page to assist you!**
+* [Muon Wiki](https://github.com/wtlnetwork/muon/wiki)
 
 Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
