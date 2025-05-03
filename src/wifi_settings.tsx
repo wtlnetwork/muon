@@ -4,19 +4,25 @@ import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
 import { FaCheck, FaTimes, FaBan } from "react-icons/fa";
 import { callable, toaster } from "@decky/api";
 import { showBannedDevicesModal } from "./banned_devices";
-
+import { SubnetDhcpInput } from "./components/SubnetDhcpInput";
 
 export const showWifiSettingsModal = (
   currentSsid: string,
   currentPassphrase: string,
   alwaysUseStoredCredentials: boolean,
-  onSave: (ssid: string, passphrase: string, alwaysUse: boolean) => void
+  currentBaseIp: string,
+  currentDhcpStart: string,
+  currentDhcpEnd: string,
+  onSave: (ssid: string, passphrase: string, alwaysUse: boolean, ip: string, dhcpStart: string, dhcpEnd: string) => void
 ) => {
   showModal(
     <WifiSettingsModal
       currentSsid={currentSsid}
       currentPassphrase={currentPassphrase}
       alwaysUseStoredCredentials={alwaysUseStoredCredentials}
+      currentBaseIp={currentBaseIp}
+      currentDhcpStart={currentDhcpStart}
+      currentDhcpEnd={currentDhcpEnd}
       onSave={onSave}
     />,
     undefined,
@@ -28,19 +34,28 @@ const WifiSettingsModal = ({
   currentSsid,
   currentPassphrase,
   alwaysUseStoredCredentials,
+  currentBaseIp,
+  currentDhcpStart,
+  currentDhcpEnd,
   onSave,
   closeModal,
 }: {
   currentSsid: string;
   currentPassphrase: string;
   alwaysUseStoredCredentials: boolean;
-  onSave: (ssid: string, passphrase: string, alwaysUse: boolean) => void;
+  currentBaseIp: string;
+  currentDhcpStart: string;
+  currentDhcpEnd: string;
+  onSave: (ssid: string, passphrase: string, alwaysUse: boolean, ip: string, dhcpStart: string, dhcpEnd: string) => void
   closeModal?: () => void;
 }) => {
   const [newSsid, setNewSsid] = useState(currentSsid);
   const [newPassphrase, setNewPassphrase] = useState(currentPassphrase);
   const [alwaysUse, setAlwaysUse] = useState(alwaysUseStoredCredentials);
   const [error, setError] = useState<string | null>(null);
+  const [baseIp, setBaseIp] = useState(currentBaseIp);
+  const [dhcpStart, setDhcpStart] = useState(currentDhcpStart);
+  const [dhcpEnd, setDhcpEnd] = useState(currentDhcpEnd);
 
   const handleSave = async () => {
     if (newPassphrase.length < 8 || newPassphrase.length > 63) {
@@ -55,9 +70,17 @@ const WifiSettingsModal = ({
       const updatedConfig = await callable<[string, string, boolean], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>(
         "update_credentials"
       )(newSsid, newPassphrase, alwaysUse);
-  
+      const updateDhcp = callable<[string, string, string], { ip_address: string; dhcp_range: string }>("update_dhcp");
+      await updateDhcp(baseIp, dhcpStart, dhcpEnd);
       // Update UI with the latest values
-      onSave(updatedConfig.ssid, updatedConfig.passphrase, updatedConfig.always_use_stored_credentials);
+      onSave(
+        updatedConfig.ssid,
+        updatedConfig.passphrase,
+        updatedConfig.always_use_stored_credentials,
+        baseIp,
+        dhcpStart,
+        dhcpEnd
+      );
       closeModal?.();
     } catch (error) {
       setError("Could not save settings.");
@@ -65,9 +88,6 @@ const WifiSettingsModal = ({
     }
   };
   
-  
-  
-
   return (
     <ModalRoot>
       <PanelSectionRow>
@@ -91,6 +111,17 @@ const WifiSettingsModal = ({
         </Field>
       </PanelSectionRow>
       {error && <p style={{ color: "red" }}>{error}</p>}
+      <PanelSectionRow>
+        <SubnetDhcpInput
+          baseIp={baseIp}
+          error={error || undefined}
+          onChange={(ip, start, end) => {
+            setBaseIp(ip);
+            setDhcpStart(start);
+            setDhcpEnd(end);
+          }}
+        />
+      </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem layout="inline" onClick={showBannedDevicesModal}>
           <FaBan /> Manage Banned Devices

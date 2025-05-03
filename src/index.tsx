@@ -40,6 +40,9 @@ function Content() {
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
+  const [baseIp, setBaseIp] = useState("192.168.8.1");
+  const [dhcpStart, setDhcpStart] = useState("192.168.8.100");
+  const [dhcpEnd, setDhcpEnd] = useState("192.168.8.200");
   const [dependencies, setDependencies] = useState<Record<string, boolean> | null>(null);
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
@@ -76,7 +79,13 @@ function Content() {
   useEffect(() => {
     const initializeSettings = async () => {
       try {
-        const storedConfig = await callable<[], { ssid: string; passphrase: string; always_use_stored_credentials: boolean }>("load_settings")();
+        const storedConfig = await callable<[], {
+          ssid: string;
+          passphrase: string;
+          always_use_stored_credentials: boolean;
+          ip_address: string;
+          dhcp_range: string;
+        }>("load_settings")();
         let alwaysUse = storedConfig.always_use_stored_credentials;
         let finalSsid = storedConfig.ssid;
         let finalPassphrase = storedConfig.passphrase;
@@ -91,6 +100,10 @@ function Content() {
         setSsid(finalSsid);
         setPassphrase(finalPassphrase);
         setAlwaysUseStoredCredentials(alwaysUse);
+        setBaseIp(storedConfig.ip_address);
+        const [start, end] = storedConfig.dhcp_range.split(",").slice(0, 2);
+        setDhcpStart(start);
+        setDhcpEnd(end);
   
         // Fetch dependencies when the effect runs
         const deps = await checkDependencies();
@@ -375,16 +388,28 @@ function Content() {
                 ssid,
                 passphrase,
                 alwaysUseStoredCredentials,
-                async (newSsid, newPassphrase, alwaysUse) => {
-                  // Fetch updated values from Python after saving
+                baseIp,
+                dhcpStart,
+                dhcpEnd,
+                async (
+                  newSsid: string,
+                  newPassphrase: string,
+                  alwaysUse: boolean,
+                  ip: string,
+                  dhcpStart: string,
+                  dhcpEnd: string
+                ) => {
                   const updatedConfig = await callable<
                     [string, string, boolean],
                     { ssid: string; passphrase: string; always_use_stored_credentials: boolean }
                   >("update_credentials")(newSsid, newPassphrase, alwaysUse);
-  
+              
                   setSsid(updatedConfig.ssid);
                   setPassphrase(updatedConfig.passphrase);
                   setAlwaysUseStoredCredentials(updatedConfig.always_use_stored_credentials);
+                  setBaseIp(ip);
+                  setDhcpStart(dhcpStart);
+                  setDhcpEnd(dhcpEnd);
                 }
               )
             }

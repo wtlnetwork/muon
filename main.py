@@ -56,9 +56,17 @@ class Plugin:
                 self.ssid = await self.get_hostname()
                 self.passphrase = self.generate_random_password()
 
+        self.ip_address = self.settings.getSetting("ip_address", "192.168.8.1")
+        self.dhcp_range = self.settings.getSetting("dhcp_range", "192.168.8.100,192.168.8.200,12h")
         decky.logger.info(f"[Settings] SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUseStored={self.always_use_stored_credentials}")
-        return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
-
+        return {
+            "ssid": self.ssid,
+            "passphrase": self.passphrase,
+            "always_use_stored_credentials": self.always_use_stored_credentials,
+            "ip_address": self.ip_address,
+            "dhcp_range": self.dhcp_range,
+        }
+    
     async def settings_read(self):
         """Read settings from storage, ensuring they are initialized asynchronously."""
         decky.logger.info("Reading hotspot settings...")
@@ -299,6 +307,34 @@ class Plugin:
         else:
             decky.logger.error("Failed to configure firewalld.")
 
+    async def update_dhcp(self, ip_address: str, dhcp_start: str, dhcp_end: str, lease_time: str = "12h"):
+        import ipaddress
+        try:
+            ip = ipaddress.IPv4Address(ip_address)
+            start = ipaddress.IPv4Address(dhcp_start)
+            end = ipaddress.IPv4Address(dhcp_end)
+
+            for addr in [ip, start, end]:
+                if not addr.is_private:
+                    raise ValueError("Address not in private range.")
+
+            if ip.exploded.rsplit('.', 1)[0] != start.exploded.rsplit('.', 1)[0] or start.exploded.rsplit('.', 1)[0] != end.exploded.rsplit('.', 1)[0]:
+                raise ValueError("All addresses must be in the same /24 subnet.")
+
+            if int(start) >= int(end):
+                raise ValueError("DHCP start must be less than end.")
+
+            self.ip_address = str(ip)
+            self.dhcp_range = f"{start},{end},{lease_time}"
+
+            self.settings.setSetting("ip_address", self.ip_address)
+            self.settings.setSetting("dhcp_range", self.dhcp_range)
+            self.settings.commit()
+
+            return {"ip_address": self.ip_address, "dhcp_range": self.dhcp_range}
+        except Exception as e:
+            decky.logger.error(f"Failed to update DHCP config: {e}")
+            return {"error": str(e)}
 
     async def start_dhcp_server(self):
         """Start the DHCP server using a shell script."""
