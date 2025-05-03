@@ -58,11 +58,11 @@ __Here are a sample of games verified for Muon!__
 ## LAN Games:
 __If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have a browse here for suggestions!__
 
-**Need help setting up Muon? Here is the Wiki page to assist you!**
-* [Muon Wiki](https://github.com/wtlnetwork/muon/wiki)
-
 Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
+
+**Need help setting up Muon? Here is the Wiki page to assist you!**
+* [Muon Wiki](https://github.com/wtlnetwork/muon/wiki)
 
 ## Planned Updates:
 
