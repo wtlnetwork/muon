@@ -27,7 +27,7 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
 
 **[BE UP-TO-DATE WITH THE NEWEST RELEASES!](https://github.com/wtlnetwork/muon/releases)**
 
-## The Plugin:
+## Preview:
 __Here are a sample of games verified for Muon!__
 
 <head>
