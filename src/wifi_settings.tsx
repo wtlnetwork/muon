@@ -89,7 +89,7 @@ const WifiSettingsModal = ({
   };
   
   return (
-    <ModalRoot>
+    <ModalRoot onCancel={closeModal}>
       <PanelSectionRow>
         <TextField label="SSID" value={newSsid} onChange={(e) => setNewSsid(e.target.value)} />
       </PanelSectionRow>
