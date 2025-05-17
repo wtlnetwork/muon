@@ -39,60 +39,60 @@ export const SubnetDhcpInput = ({ baseIp, onChange, error }: SubnetDhcpInputProp
   return (
     <>
     <PanelSectionRow>
-    <Field label="Base IP Address">
+      <Field label="Base IP Address">
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-        {octets.slice(0, 3).map((octet, i) => (
+          {octets.slice(0, 3).flatMap((octet, i) => [
             <TextField
-            key={i}
-            value={octet}
-            mustBeNumeric
-            rangeMin={0}
-            rangeMax={255}
-            style={{ width: 50 }}
-            onChange={(e) => handleOctetChange(i, e.target.value)}
-            />
-        ))}
-        <span>.</span>
-        <TextField
+              key={`octet-${i}`}
+              value={octet}
+              mustBeNumeric
+              rangeMin={0}
+              rangeMax={255}
+              style={{ width: 50 }}
+              onChange={(e) => handleOctetChange(i, e.target.value)}
+            />,
+            i < 2 && <span key={`dot-${i}`}>.</span>
+          ])}
+          <span>.</span>
+          <TextField
             value={octets[3]}
             mustBeNumeric
             rangeMin={1}
             rangeMax={254}
             style={{ width: 50 }}
             onChange={(e) => handleOctetChange(3, e.target.value)}
-        />
+          />
         </div>
-    </Field>
+      </Field>
     </PanelSectionRow>
-
     <PanelSectionRow>
-    <Field label="DHCP Range (last octet only)">
-        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-        <span>{octets[0]}</span>
-        <span>.</span>
-        <span>{octets[1]}</span>
-        <span>.</span>
-        <span>{octets[2]}</span>
-        <span>.</span>
-        <TextField
-            value={start}
-            mustBeNumeric
-            rangeMin={1}
-            rangeMax={254}
-            style={{ width: 50 }}
-            onChange={(e) => handleRangeChange(setStart, e.target.value, "start")}
-        />
-        <span>-</span>
-        <TextField
-            value={end}
-            mustBeNumeric
-            rangeMin={1}
-            rangeMax={254}
-            style={{ width: 50 }}
-            onChange={(e) => handleRangeChange(setEnd, e.target.value, "end")}
-        />
-        </div>
-    </Field>
+      <Field label="DHCP Range (last octet only)">
+          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+          <span>{octets[0]}</span>
+          <span>.</span>
+          <span>{octets[1]}</span>
+          <span>.</span>
+          <span>{octets[2]}</span>
+          <span>.</span>
+          <TextField
+              value={start}
+              mustBeNumeric
+              rangeMin={1}
+              rangeMax={254}
+              style={{ width: 50 }}
+              onChange={(e) => handleRangeChange(setStart, e.target.value, "start")}
+          />
+          <span>-</span>
+          <TextField
+              value={end}
+              mustBeNumeric
+              rangeMin={1}
+              rangeMax={254}
+              style={{ width: 50 }}
+              onChange={(e) => handleRangeChange(setEnd, e.target.value, "end")}
+          />
+          </div>
+      </Field>
     </PanelSectionRow>
       {error && (
         <PanelSectionRow>
