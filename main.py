@@ -7,7 +7,7 @@ import subprocess
 from settings import SettingsManager
 
 class Plugin:
-    # DECKY WORKFLOW METHODS
+    # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
         self.wifi_interface = "wlan0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
@@ -32,17 +32,17 @@ class Plugin:
 
     # SETTINGS METHODS
     async def load_settings(self):
-        """Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend."""
+        # Ensures SSID and passphrase are properly initialized in all cases and returns them to the frontend.
         always_use = self.settings.getSetting("always_use_stored_credentials", "false")
         self.always_use_stored_credentials = always_use == "true"
 
-        # Check session persistence
+        # Check if SSID and passphrase are set. If not, load from settings.
         if not (self.ssid and self.passphrase):
             stored_ssid = self.settings.getSetting("ssid", None)
             stored_passphrase = self.settings.getSetting("passphrase", None)
 
             if self.always_use_stored_credentials:
-                # Use stored credentials, create failsafe if missing
+                # Use stored creds, or use the Steam Deck hostname and generate random password if not set.
                 if not (stored_ssid and stored_passphrase):
                     decky.logger.warning("[Settings] Stored credentials missing! Generating failsafe.")
                     stored_ssid = await self.get_hostname()
@@ -52,10 +52,11 @@ class Plugin:
                 self.ssid = stored_ssid
                 self.passphrase = stored_passphrase
             else:
-                # Generate new credentials if none are set
+                # Failsafe is to use the Steam Deck hostname and generate random password.
                 self.ssid = await self.get_hostname()
                 self.passphrase = self.generate_random_password()
 
+        # Use the IP address and DHCP range from the settings if available, if not use the defaults.
         self.ip_address = self.settings.getSetting("ip_address", "192.168.8.1")
         self.dhcp_range = self.settings.getSetting("dhcp_range", "192.168.8.100,192.168.8.200,12h")
         decky.logger.info(f"[Settings] SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUseStored={self.always_use_stored_credentials}")
@@ -68,7 +69,7 @@ class Plugin:
         }
     
     async def settings_read(self):
-        """Read settings from storage, ensuring they are initialized asynchronously."""
+        # Read settings from storage.
         decky.logger.info("Reading hotspot settings...")
 
         ssid = self.settings.getSetting("ssid", None)
@@ -84,7 +85,7 @@ class Plugin:
         return {"ssid": ssid, "passphrase": passphrase, "always_use_stored_credentials": always_use}
 
     async def update_credentials(self, new_ssid, new_passphrase, always_use):
-        """Updates SSID and passphrase, storing to JSON only if always_use_stored_credentials is enabled."""
+        # Updates SSID and passphrase, storing only if always_use_stored_credentials is enabled.
         self.ssid = new_ssid
         self.passphrase = new_passphrase
         self.always_use_stored_credentials = always_use
@@ -153,9 +154,8 @@ class Plugin:
         except Exception as e:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
 
-    # Check if the hotspot is currently running
     async def is_hotspot_active(self) -> bool:
-        """Checks if the hostapd service is running."""
+        # Checks if the hostapd service is running.
         try:
             result = await self.run_command("systemctl is-active hostapd", check=False)
             is_active = result.strip() == "active"
@@ -186,7 +186,6 @@ class Plugin:
 
     # Check if the WiFi has been disabled
     async def is_rfkill_blocking_wlan(self):
-        """Checks if rfkill is blocking the Wireless LAN device using run_command."""
         try:
             rfkill_output = await self.run_command("rfkill list")
 
@@ -194,7 +193,6 @@ class Plugin:
                 decky.logger.error("rfkill command returned empty output.")
                 return False  # Default to not blocked
 
-            # Find Wireless LAN device
             in_wlan_section = False
             for line in rfkill_output.splitlines():
                 line = line.strip()
@@ -214,7 +212,7 @@ class Plugin:
 
     # DEPENDENCY MANAGEMENT METHODS
     async def check_dependencies(self):
-        """Ensure required dependencies are installed."""
+        # Ensure required dependencies are installed.
         statuses = {}
         for dep in ["dnsmasq", "hostapd"]:
             result = await self.run_command(f"which {dep}")
@@ -225,7 +223,7 @@ class Plugin:
         return statuses
 
     async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
-        """Installs dnsmasq and hostapd using a shell script."""
+        # Installs dnsmasq and hostapd using a shell script.
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
 
         # Convert booleans to strings for shell script compatibility
@@ -275,7 +273,7 @@ class Plugin:
         return ip_address, gateway, dns_servers
 
     async def capture_service_states(self):
-        """Capture the current state of NetworkManager and iwd before stopping them."""
+        # Capture the current state of NetworkManager and iwd before stopping them.
         decky.logger.info("Capturing service states for NetworkManager and iwd...")
         # Initialise variable for storing service states
         self.service_states = {}
@@ -293,7 +291,7 @@ class Plugin:
         decky.logger.info(f"Captured service states: {self.service_states}")
 
     async def configure_firewalld(self):
-        """Configure firewalld for broadcast and DHCP traffic using a shell script."""
+        # Configure firewalld for broadcast and DHCP traffic using a shell script.
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/change_firewall_settings.sh")
 
         decky.logger.info("Configuring firewalld...")
@@ -337,7 +335,7 @@ class Plugin:
             return {"error": str(e)}
 
     async def start_dhcp_server(self):
-        """Start the DHCP server using a shell script."""
+        # Start the DHCP server using a shell script.
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_dhcp_server.sh")
 
         decky.logger.info("Starting DHCP Server.")
@@ -358,21 +356,21 @@ class Plugin:
 
     # SUSPENSION METHODS
     async def suspend_ap(self):
+        # This function disables the hotspot if the Steam Deck is suspended.
         if self.hotspot_active:
             decky.logger.info("Suspending, disabling hotspot...")
             await self.stop_hotspot()
 
     async def resume_ap(self):
+        # Function for resuming the hotspot after suspension.
+        # At the moment, this just adds a log entry. It's mainly for debugging.
         decky.logger.info("Resuming from suspension...")
 
 
     # CLIENT LIST METHODS
     async def get_connected_devices(self):
-        """
-        Combines output from hostapd_cli and dnsmasq to return connected devices info in JSON format.
-        Returns:
-            JSON-formatted string with connected devices' MAC, IP, Hostname, and Signal Strength
-        """
+        # Combines output from hostapd_cli and dnsmasq to return connected devices info
+        # in JSON format.
         decky.logger.info("Fetching connected devices...")
 
         # Hostapd and dnsmasq locations
@@ -441,7 +439,7 @@ class Plugin:
     async def kick_mac(self, mac_address: str) -> bool:
         """Kick and block a MAC address from the hotspot."""
         try:
-            # Step 1: Deauthenticate the device (Kick it off)
+            # Deauthenticate the device (kick it off the hotspot)
             result = await self.run_command(f"hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
 
             if not result or "OK" not in result:
@@ -450,14 +448,14 @@ class Plugin:
 
             decky.logger.info(f"Successfully kicked MAC address: {mac_address}")
 
-            # Step 2: Add MAC to deny list in hostapd.deny
+            # Add MAC to deny list in hostapd.deny
             hostapd_conf = "/etc/hostapd/hostapd.deny"
             with open(hostapd_conf, "a") as f:
                 f.write(f"\n{mac_address}\n")
 
             decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
 
-            # Step 3: Reload hostapd configuration
+            # Reload hostapd configuration
             reload_result = await self.run_command("sudo systemctl reload hostapd")
 
             if reload_result.strip() == "":  # Success if output is empty
@@ -472,7 +470,9 @@ class Plugin:
             return False
         
     async def retrieve_ban_list(self) -> list:
+        # Regex which matches valid MAC addresses.
         VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+        # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
         EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
         """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
         deny_file = "/etc/hostapd/hostapd.deny"
@@ -490,6 +490,7 @@ class Plugin:
                 ]
 
             decky.logger.info(f"Retrieved {len(mac_addresses)} valid banned MAC addresses.")
+            # Return all valid MAC addresses, excluding the default ones.
             return mac_addresses
 
         except Exception as e:
@@ -497,7 +498,7 @@ class Plugin:
             return []
 
     async def unban_mac_address(self, mac_address: str) -> bool:
-        """Removes a MAC address from hostapd.deny and reloads hostapd."""
+        # Removes a MAC address from hostapd.deny and reloads hostapd.
         deny_file = "/etc/hostapd/hostapd.deny"
 
         try:
@@ -538,7 +539,9 @@ class Plugin:
 
     # UTILITY METHODS
     async def run_command(self, command, check: bool = False):
+        # Function to run a shell command.
         env = os.environ.copy()
+        # We encountered some weird bugs unless this was explicitly included in the env variables.
         env["LD_PRELOAD"] = "/usr/lib/libreadline.so.8"
 
         if isinstance(command, list):
@@ -556,30 +559,28 @@ class Plugin:
         return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):
-        """Ensure the wlan0 interface is available and up."""
+        # Ensure the wlan0 interface is available and up.
         decky.logger.info("Checking wlan0 status...")
         # Check the status of the primary wireless networking device (almost always wlan0)
         result = await self.run_command("ip link show wlan0")
         decky.logger.info(f"wlan0 status: {result}")
 
-        #If the WiFi is down, bring it up:
+        # If the WiFi is down, bring it up:
         if "state DOWN" in result:
             decky.logger.info("wlan0 is down. Bringing it up...")
             await self.run_command("sudo ip link set wlan0 up")
 
-        # If the WiFi chip is missing for some reason:
+        # If the WiFi chip is missing for some reason (this should never happen, but good to handle it cleanly):
         elif "state UNKNOWN" in result:
             decky.logger.error("wlan0 interface not found. Check your WiFi adapter.")
             raise Exception("wlan0 interface not found.")
 
     async def get_hostname(self):
-        """Returns the current system hostname."""
-        # Return the hostname of the system
+        # Returns the current system hostname
         decky.logger.info("Fetching system hostname...")
         return os.uname()[1]
 
     def generate_random_password(self):
-        """Generates a secure 8-character password."""
         import random
         # Randomly select eight characters from the charset variable and return them. Letters and numbers have been chosen to be unambiguous
         charset = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
