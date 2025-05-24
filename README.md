@@ -66,10 +66,10 @@ Official Muon Steam Group:
 
 ## Planned Updates:
 
-* Create custom Host IP address in Wi-Fi settings (0.1.5 release)
+* Create custom Host IP address in Wi-Fi settings (0.1.5 release) ✔
 * Nix Intergration (Seeking assistance)
 * Testing NetworkManager build (not garenteed)
-* decky-loader plugin store release (0.1.6 Public Release)
+* decky-loader plugin store release (0.1.6)
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
