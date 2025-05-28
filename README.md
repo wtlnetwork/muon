@@ -49,7 +49,7 @@ __Here are a sample of games verified for Muon!__
         </tr>
         <tr>
             <td>QUAKE III ARENA</td>
-            <td>No More Room in Hell (Coming Soon)</td>
+            <td>Stardew Valley (Coming Soon)</td>
         </tr>
     </table>
 </body>
