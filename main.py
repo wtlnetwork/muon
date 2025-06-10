@@ -541,9 +541,7 @@ class Plugin:
     async def run_command(self, command, check: bool = False):
         # Function to run a shell command.
         env = os.environ.copy()
-        # We encountered some weird bugs unless this was explicitly included in the env variables.
-        env["LD_PRELOAD"] = "/usr/lib/libreadline.so.8"
-
+        env["LD_LIBRARY_PATH"] = "/usr/lib:/usr/lib64:" + env.get("LD_LIBRARY_PATH", "")
         if isinstance(command, list):
             result = await asyncio.create_subprocess_exec(
                 *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
