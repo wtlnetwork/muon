@@ -245,7 +245,7 @@ class Plugin:
         
         decky.logger.info(f"`{package}` is now installed.")
         
-		return True
+        return True
 
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
