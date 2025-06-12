@@ -21,13 +21,12 @@ import { BootIcon } from "./banned_devices";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
-const checkDependencies = callable<[], Record<string, boolean>>("check_dependencies");
 const isHotspotActive = callable<[], boolean>("is_hotspot_active");
 const updateCredentials = callable<[string, string, boolean], void>("update_credentials");
-const installDependencies = callable<[boolean, boolean], { success: boolean; error?: string }>("install_dependencies");
 const getConnectedDevices = callable<[], any>("get_connected_devices");
-const kickMac = callable<[string], boolean>("kick_mac");
-const getIpAddress = callable<[], string>("get_ip_address");
+const checkDependency = callable<[string], boolean>("check_dependency");
+const installNix = callable<[], boolean>("install_nix");
+const installDependency = callable<[string], boolean>("install_dependency");
 
 declare global {
   interface Window {
@@ -105,9 +104,28 @@ function Content() {
         setDhcpStart(start);
         setDhcpEnd(end);
   
-        // Fetch dependencies when the effect runs
-        const deps = await checkDependencies();
-        setDependencies(deps);
+        // Check if Nix is installed first
+        const nixInstalled = await checkDependency("nix");
+
+        if (!nixInstalled) {
+          toaster.toast({ title: "Nix Missing", body: "Installing Nix, please wait..." });
+          const nixSuccess = await installNix();
+          
+          if (!nixSuccess) {
+            toaster.toast({ title: "Error", body: "Failed to install Nix. Please install it manually." });
+            return;
+          }
+        }
+
+        // Now check for dnsmasq and hostapd
+        const dnsmasqInstalled = await checkDependency("dnsmasq");
+        const hostapdInstalled = await checkDependency("hostapd");
+
+        setDependencies({
+          nix: true,
+          dnsmasq: dnsmasqInstalled,
+          hostapd: hostapdInstalled,
+        });
   
         const hotspotActive = await isHotspotActive();
         setHotspotStatus(hotspotActive ? "running" : "stopped");
@@ -223,31 +241,43 @@ function Content() {
             disabled={installingDependencies}
             onClick={async () => {
               setInstallingDependencies(true);
-              toaster.toast({ title: "Installing Dependencies", body: "Please wait..." });
-  
-              const result = await installDependencies(missingDnsmasq, missingHostapd);
-              if (result.success) {
-                toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
-  
-                const updatedDeps = await checkDependencies();
-                setDependencies(updatedDeps);
-  
-                const hotspotActive = await isHotspotActive();
-                setHotspotStatus(hotspotActive ? "running" : "stopped");
-              } else {
-                toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
+              
+              if (!dependencies?.dnsmasq) {
+                toaster.toast({ title: "Installing", body: "Installing dnsmasq..." });
+                const dnsmasqSuccess = await installDependency("dnsmasq");
+
+                if (!dnsmasqSuccess) {
+                  toaster.toast({ title: "Error", body: "Failed to install dnsmasq." });
+                  setInstallingDependencies(false);
+                  return;
+                }
               }
-  
+
+              if (!dependencies?.hostapd) {
+                toaster.toast({ title: "Installing", body: "Installing hostapd..." });
+                const hostapdSuccess = await installDependency("hostapd");
+
+                if (!hostapdSuccess) {
+                  toaster.toast({ title: "Error", body: "Failed to install hostapd." });
+                  setInstallingDependencies(false);
+                  return;
+                }
+              }
+
+              // Re-check dependencies after installation
+              const updatedDnsmasq = await checkDependency("dnsmasq");
+              const updatedHostapd = await checkDependency("hostapd");
+
+              setDependencies({
+                nix: true,
+                dnsmasq: updatedDnsmasq,
+                hostapd: updatedHostapd,
+              });
+
+              toaster.toast({ title: "Success", body: "All dependencies installed successfully!" });
               setInstallingDependencies(false);
             }}
           >
-            {installingDependencies ? (
-              <>
-                <FaSpinner className="animate-spin" /> Installing...
-              </>
-            ) : (
-              "Install Missing Dependencies"
-            )}
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
