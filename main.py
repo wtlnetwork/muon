@@ -545,6 +545,7 @@ class Plugin:
     async def run_command(self, command, check: bool = False):
         # Function to run a shell command.
         env = os.environ.copy()
+        env["PATH"] = "/nix/var/nix/profiles/default/bin:" + env.get("PATH", "")
         env["LD_LIBRARY_PATH"] = "/usr/lib:/usr/lib64:" + env.get("LD_LIBRARY_PATH", "")
         if isinstance(command, list):
             result = await asyncio.create_subprocess_exec(

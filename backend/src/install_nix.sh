@@ -5,8 +5,9 @@ set -e  # Exit on any error
 echo "========== NIX MULTI-USER INSTALLATION SCRIPT STARTED =========="
 echo "Running as user: $(whoami)"
 
-echo "Downloading and installing Nix (multi-user mode)..."
-if sh <(curl -L https://nixos.org/nix/install) --daemon; then
+echo "Downloading and installing Nix for Steam Deck..."
+
+if curl -L https://install.determinate.systems/nix | sh -s -- install steam-deck --no-confirm; then
     echo "Nix installation script executed successfully."
 else
     echo "Nix installation failed. Exiting."
