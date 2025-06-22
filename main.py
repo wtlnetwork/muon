@@ -212,13 +212,21 @@ class Plugin:
 
     # DEPENDENCY MANAGEMENT METHODS
     async def check_dependencies(self):
-        # Ensure required dependencies are installed.
+        # Custom binary path
+        bin_path = "/home/deck/homebrew/plugins/muon/backend/bin"
+        dependencies = {
+            "dnsmasq": f"{bin_path}/dnsmasq",
+            "hostapd": f"{bin_path}/hostapd",
+            "hostapd_cli": f"{bin_path}/hostapd_cli"
+        }
+
         statuses = {}
-        for dep in ["dnsmasq", "hostapd"]:
-            result = await self.run_command(f"which {dep}")
-            statuses[dep] = bool(result)
-            if not result:
-                decky.logger.error(f"ERROR: `{dep}` is not installed.")
+        for dep, path in dependencies.items():
+            exists = os.path.isfile(path) and os.access(path, os.X_OK)
+            statuses[dep] = exists
+            if not exists:
+                decky.logger.error(f"Missing or non-executable: {path}")
+
         decky.logger.info("Dependency statuses: " + str(statuses))
         return statuses
 
@@ -236,12 +244,15 @@ class Plugin:
             f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
         )
 
-        if "Dependencies installed successfully" in result:
-            decky.logger.info("Dependencies installed successfully.")
+        statuses = await self.check_dependencies()
+        missing = [name for name, ok in statuses.items() if not ok]
+
+        if not missing:
+            decky.logger.info("All dependencies installed and executable.")
             return {"success": True}
-        
-        decky.logger.error("Failed to install dependencies.")
-        return {"success": False, "error": "Check logs for details"}
+        else:
+            decky.logger.error(f"Missing or non-executable dependencies: {missing}")
+            return {"success": False, "error": f"Missing binaries: {', '.join(missing)}"}
 
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
@@ -369,12 +380,13 @@ class Plugin:
 
     # CLIENT LIST METHODS
     async def get_connected_devices(self):
+        CTRL_INTERFACE_DIR="/home/deck/homebrew/plugins/muon/backend/bin/ctrl"
         # Combines output from hostapd_cli and dnsmasq to return connected devices info
         # in JSON format.
         decky.logger.info("Fetching connected devices...")
 
         # Hostapd and dnsmasq locations
-        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.wifi_interface} all_sta"
+        hostapd_cmd = f"sudo /home/deck/homebrew/plugins/muon/backend/bin/hostapd_cli -p {CTRL_INTERFACE_DIR} -i {self.wifi_interface} all_sta"
         dnsmasq_leases_file = "/var/lib/misc/dnsmasq.leases"
 
         # Dictionary to store device info
@@ -440,7 +452,7 @@ class Plugin:
         """Kick and block a MAC address from the hotspot."""
         try:
             # Deauthenticate the device (kick it off the hotspot)
-            result = await self.run_command(f"hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
+            result = await self.run_command(f"/home/deck/homebrew/plugins/muon/backend/bin/hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
 
             if not result or "OK" not in result:
                 decky.logger.error(f"Failed to kick MAC address: {mac_address}. Response: {result}")
@@ -449,14 +461,14 @@ class Plugin:
             decky.logger.info(f"Successfully kicked MAC address: {mac_address}")
 
             # Add MAC to deny list in hostapd.deny
-            hostapd_conf = "/etc/hostapd/hostapd.deny"
+            hostapd_conf = "/home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny"
             with open(hostapd_conf, "a") as f:
                 f.write(f"\n{mac_address}\n")
 
             decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
 
-            # Reload hostapd configuration
-            reload_result = await self.run_command("sudo systemctl reload hostapd")
+            await self.run_command("sudo pkill -f /home/deck/homebrew/plugins/muon/backend/bin/hostapd")
+            reload_result = await self.run_command("sudo /home/deck/homebrew/plugins/muon/backend/bin/hostapd /etc/hostapd/hostapd.conf &")
 
             if reload_result.strip() == "":  # Success if output is empty
                 decky.logger.info("Reloaded hostapd configuration successfully.")
@@ -475,7 +487,7 @@ class Plugin:
         # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
         EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
         """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
-        deny_file = "/etc/hostapd/hostapd.deny"
+        deny_file = "/home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny"
 
         try:
             if not os.path.exists(deny_file):
@@ -499,7 +511,7 @@ class Plugin:
 
     async def unban_mac_address(self, mac_address: str) -> bool:
         # Removes a MAC address from hostapd.deny and reloads hostapd.
-        deny_file = "/etc/hostapd/hostapd.deny"
+        deny_file = "/home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny"
 
         try:
             if not os.path.exists(deny_file):
@@ -523,7 +535,8 @@ class Plugin:
             decky.logger.info(f"Unbanned MAC address: {mac_address}")
 
             # Reload hostapd to apply changes
-            reload_result = await self.run_command("sudo systemctl reload hostapd")
+            await self.run_command("sudo pkill -f /home/deck/homebrew/plugins/muon/backend/bin/hostapd")
+            reload_result = await self.run_command("sudo /home/deck/homebrew/plugins/muon/backend/bin/hostapd /etc/hostapd/hostapd.conf &")
 
             if reload_result.strip() == "":  # Success if no output
                 decky.logger.info("Reloaded hostapd configuration successfully.")

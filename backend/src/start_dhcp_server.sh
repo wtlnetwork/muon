@@ -32,7 +32,7 @@ sudo pkill dnsmasq
 
 # Start dnsmasq
 echo "Starting dnsmasq..."
-sudo dnsmasq -C "$DNSMASQ_CONFIG" 2>&1 &
+sudo /home/deck/homebrew/plugins/muon/backend/bin/dnsmasq -C "$DNSMASQ_CONFIG" 2>&1 &
 
 # Pause for two seconds to allow dnsmasq to start.
 sleep 1

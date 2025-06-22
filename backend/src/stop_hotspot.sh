@@ -9,8 +9,8 @@ echo "Restoring network configuration for $WIFI_INTERFACE..."
 
 # Stop the hostapd and dnsmasq services
 echo "Stopping hostapd and dnsmasq..."
-sudo systemctl stop hostapd
-sudo pkill dnsmasq
+sudo pkill -f "/home/deck/homebrew/plugins/muon/backend/bin/hostapd"
+sudo pkill -f "/home/deck/homebrew/plugins/muon/backend/bin/dnsmasq"
 
 # Switch the WiFi chip back to managed mode (i.e. regular client mode)
 echo "Resetting $WIFI_INTERFACE to managed mode..."

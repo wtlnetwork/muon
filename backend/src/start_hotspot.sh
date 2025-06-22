@@ -5,8 +5,10 @@ WIFI_INTERFACE=$1
 STATIC_IP=$2
 SSID=$3
 PASSPHRASE=$4
-HOSTAPD_CONF="/etc/hostapd/hostapd.conf"
-CTRL_INTERFACE_DIR="/var/run/hostapd"
+HOSTAPD_CONF="/home/deck/homebrew/plugins/muon/backend/bin/hostapd.conf"
+CTRL_INTERFACE_DIR="/home/deck/homebrew/plugins/muon/backend/bin/ctrl"
+
+mkdir -p "$CTRL_INTERFACE_DIR"
 
 echo "Starting hotspot setup..."
 echo "WiFi Interface: $WIFI_INTERFACE"
@@ -95,14 +97,19 @@ rsn_pairwise=CCMP
 
 # Control interface for hostapd_cli communication
 ctrl_interface=$CTRL_INTERFACE_DIR
-ctrl_interface_group=0
-deny_mac_file=/etc/hostapd/hostapd.deny
+ctrl_interface_group=$(id -g)
+deny_mac_file=/home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny
 EOT
 echo "Hostapd configuration generated."
 
+if [ -S "$CTRL_INTERFACE_DIR/$WIFI_INTERFACE" ]; then
+    echo "Removing stale control socket..."
+    rm -f "$CTRL_INTERFACE_DIR/$WIFI_INTERFACE"
+fi
+
 # Restart hostapd
 echo "Restarting hostapd..."
-sudo systemctl restart hostapd
+sudo /home/deck/homebrew/plugins/muon/backend/bin/hostapd "$HOSTAPD_CONF" &
 if [ $? -ne 0 ]; then
     echo "Failed to start hostapd."
     exit 1
@@ -124,7 +131,7 @@ fi
 
 # Test hostapd_cli connection
 echo "Testing hostapd_cli connection..."
-sudo hostapd_cli -p "$CTRL_INTERFACE_DIR" -i "$WIFI_INTERFACE" status
+sudo /home/deck/homebrew/plugins/muon/backend/bin/hostapd_cli -p "$CTRL_INTERFACE_DIR" -i "$WIFI_INTERFACE" status
 if [ $? -ne 0 ]; then
     echo "Failed to connect to hostapd using hostapd_cli."
     exit 1
