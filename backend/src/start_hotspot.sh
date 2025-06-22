@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Input Parameters
 WIFI_INTERFACE=$1
 STATIC_IP=$2
 SSID=$3
@@ -16,9 +15,6 @@ echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
 
-# -----------------------------------
-# Step 1: Stop Network Services
-# -----------------------------------
 echo "Stopping network services..."
 sudo systemctl stop NetworkManager
 sudo systemctl stop iwd
@@ -28,9 +24,6 @@ if [ $? -ne 0 ]; then
 fi
 echo "Network services stopped."
 
-# -----------------------------------
-# Step 2: Configure Static IP
-# -----------------------------------
 echo "Configuring static IP for $WIFI_INTERFACE..."
 
 # Flush the existing IP configuration from the interface
@@ -60,9 +53,6 @@ else
     fi
 fi
 
-# -----------------------------------
-# Step 3: Prepare Control Interface Directory
-# -----------------------------------
 echo "Ensuring control interface directory exists..."
 
 # Create the control directory if it doesn't exist
@@ -77,9 +67,11 @@ sudo chown root:root "$CTRL_INTERFACE_DIR"
 sudo chmod 755 "$CTRL_INTERFACE_DIR"
 echo "Control interface directory is ready."
 
-# -----------------------------------
-# Step 4: Start Hotspot
-# -----------------------------------
+# Check if mac deny file exists. If not, create it
+if [ ! -f /home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny ]; then
+	touch /home/deck/homebrew/plugins/muon/backend/bin/hostapd.deny
+fi
+
 echo "Starting hotspot with SSID: $SSID"
 
 # Generate hostapd configuration
@@ -115,10 +107,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "Hotspot started successfully."
-
-# -----------------------------------
-# Step 5: Verify Hostapd Control Interface
-# -----------------------------------
+# Momentary pause to allow hostapd to get started. Helps avoid a race condition
+sleep 2
 echo "Verifying hostapd control interface..."
 
 # Check if the control socket was created
