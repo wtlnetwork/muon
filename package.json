@@ -1,7 +1,7 @@
 {
   "name": "muon",
   "version": "0.1.6",
-  "description": "Ad-hoc networking plugin for Decky.",
+  "description": "Ad-hoc WiFi networking plugin for Decky.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -24,7 +24,7 @@
     "networking"
   ],
   "author": "Jenomorph/WTLNetwork",
-  "license": "CC-BY-NC-SA",
+  "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/wtlnetwork/muon/issues"
   },
