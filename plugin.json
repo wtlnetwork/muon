@@ -1,11 +1,11 @@
 {
   "name": "Muon",
   "author": "Jenomorph/WTLNetwork",
-  "flags": ["debug", "root"],
+  "flags": ["root"],
   "api_version": 1,
   "publish": {
     "tags": ["adhoc", "wifi", "p2p", "multiplayer", "root"],
-    "description": "Ad-hoc networking plugin for Decky.",
-    "image": "https://i.imgur.com/14ATz7J.png"
+    "description": "Ad-hoc WiFi networking plugin for Decky.",
+    "image": "https://github.com/wtlnetwork/muon/blob/main/assets/logo.png"
   }
 }

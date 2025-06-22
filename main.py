@@ -17,6 +17,7 @@ class Plugin:
         self.hotspot_active = False
         self.ssid = None
         self.passphrase = None
+        self.current_directory = os.path.dirname(__file__)
 
     async def _main(self):
         decky.logger.info("Hotspot Plugin Loaded")
@@ -29,6 +30,17 @@ class Plugin:
         if self.hotspot_active:
             await self.stop_hotspot()
         decky.logger.info("Plugin Unloaded")
+
+    async def _uninstall(self):
+        decky.logger.info("Stopping Hotspot Plugin")
+        if self.hotspot_active:
+            await self.stop_hotspot()
+
+        decky.logger.info("Cleaning up dependencies.")
+        script_path = os.path.join(os.path.dirname(__file__), "backend/src/remove_dependencies.sh")
+        await self.run_command(
+            f"bash {script_path}"
+        )
 
     # SETTINGS METHODS
     async def load_settings(self):
@@ -157,8 +169,8 @@ class Plugin:
     async def is_hotspot_active(self) -> bool:
         # Checks if the hostapd service is running.
         try:
-            result = await self.run_command("systemctl is-active hostapd", check=False)
-            is_active = result.strip() == "active"
+            result = await self.run_command("pgrep -x hostapd", check=False)
+            is_active = bool(result.strip())
             decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
             return is_active
         except Exception as e:
@@ -222,26 +234,31 @@ class Plugin:
         decky.logger.info("Dependency statuses: " + str(statuses))
         return statuses
 
-    async def install_dependencies(self, install_dnsmasq: bool, install_hostapd: bool):
-        # Installs dnsmasq and hostapd using a shell script.
+    async def install_dependencies(self):
+        # Path to install script
         script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
 
-        # Convert booleans to strings for shell script compatibility
-        dnsmasq_flag = "true" if install_dnsmasq else "false"
-        hostapd_flag = "true" if install_hostapd else "false"
 
-        decky.logger.info("Installing dependencies via Shell Script")
+        # Set working directory to where package_url.list lives
+        extensions_dir = os.path.join(os.path.dirname(__file__), "defaults/extensions")
+
+        decky.logger.info(f"Installing dependencies via shell script.")
 
         result = await self.run_command(
-            f"bash {script_path} {dnsmasq_flag} {hostapd_flag}"
+            f"bash {script_path}",
+            cwd=extensions_dir
         )
 
-        if "Dependencies installed successfully" in result:
-            decky.logger.info("Dependencies installed successfully.")
-            return {"success": True}
-        
-        decky.logger.error("Failed to install dependencies.")
-        return {"success": False, "error": "Check logs for details"}
+        # Recheck dependencies after script runs
+        statuses = await self.check_dependencies()
+
+        missing = [dep for dep, ok in statuses.items() if not ok]
+        if missing:
+            decky.logger.error(f"Missing after install: {missing}")
+            return {"success": False, "missing": missing}
+
+        decky.logger.info("All dependencies confirmed installed.")
+        return {"success": True}
 
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
@@ -538,23 +555,35 @@ class Plugin:
 
 
     # UTILITY METHODS
-    async def run_command(self, command, check: bool = False):
-        # Function to run a shell command.
-        env = os.environ.copy()
-        env["LD_LIBRARY_PATH"] = "/usr/lib:/usr/lib64:" + env.get("LD_LIBRARY_PATH", "")
-        if isinstance(command, list):
-            result = await asyncio.create_subprocess_exec(
-                *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-            )
-        else:
-            result = await asyncio.create_subprocess_exec(
-                "/bin/bash", "-c", command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-            )
+    async def run_command(self, command, check=False, cwd=None):
+            # Function to run a shell command.
+            env = os.environ.copy()
+            env["LD_LIBRARY_PATH"] = "/usr/lib:/usr/lib64:" + env.get("LD_LIBRARY_PATH", "")
 
-        stdout, stderr = await result.communicate()
-        if stderr:
-            decky.logger.error(f"Command error: {stderr.decode().strip()}")
-        return stdout.decode().strip()
+            if cwd is None:
+                cwd = os.path.dirname(__file__)
+
+            if isinstance(command, list):
+                result = await asyncio.create_subprocess_exec(
+                    *command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env,
+                    cwd=cwd
+                )
+            else:
+                result = await asyncio.create_subprocess_exec(
+                    "/bin/bash", "-c", command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env,
+                    cwd=cwd
+                )
+
+            stdout, stderr = await result.communicate()
+            if stderr:
+                decky.logger.error(f"Command error: {stderr.decode().strip()}")
+            return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):
         # Ensure the wlan0 interface is available and up.

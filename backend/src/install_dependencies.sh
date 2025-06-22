@@ -1,49 +1,68 @@
 #!/bin/bash
+set -e
 
-# Boolean flags to determine if dnsmasq and hostapd should be installed
-INSTALL_DNSMASQ=$1
-INSTALL_HOSTAPD=$2
+SYSEXT_DIR="./muon"
+SYSEXT_RAW="./muon.raw"
+SYSEXT_DESTINATION="/var/lib/extensions/muon.raw"
+SYSEXT_RELEASE="${SYSEXT_DIR}/usr/lib/extension-release.d/extension-release.muon"
+PACKAGE_LIST="./package_url.list"
 
-echo "Installing dependencies..."
-echo "Install dnsmasq: $INSTALL_DNSMASQ"
-echo "Install hostapd: $INSTALL_HOSTAPD"
+OS_ID="ID=steamos"
+VERSION_ID=$(grep VERSION_ID /etc/os-release)
 
-# Disable SteamOS read-only system state
-echo "Disabling SteamOS read-only state..."
-sudo steamos-readonly disable
+# Download packages if not already there
+wget -q -nc -i "$PACKAGE_LIST"
 
-# Initialize and populate Pacman keys
-echo "Initializing and populating Pacman keys..."
-sudo pacman-key --init
-sudo pacman-key --populate archlinux
-sudo pacman-key --populate holo
+# Determine whether to rebuild
+SHOULD_REBUILD=false
 
-# If dnsmasq is set to install, install it
-ERROR=false
-if [ "$INSTALL_DNSMASQ" == "true" ]; then
-    echo "Installing dnsmasq..."
-    sudo pacman -Sy --noconfirm dnsmasq
-    if [ $? -ne 0 ]; then
-        echo "Failed to install dnsmasq."
-        ERROR=true
-    fi
-fi
-
-# If hostapd is set to install, install it
-if [ "$INSTALL_HOSTAPD" == "true" ]; then
-    echo "Installing hostapd..."
-    sudo pacman -Sy --noconfirm hostapd
-    if [ $? -ne 0 ]; then
-        echo "Failed to install hostapd."
-        ERROR=true
-    fi
-fi
-
-# If we encountered an error, exit with an error code
-if [ "$ERROR" == "true" ]; then
-    echo "One or more dependencies failed to install."
-    exit 1
+if [ ! -f "$SYSEXT_RELEASE" ]; then
+  echo "No extension-release file found. Rebuilding."
+  SHOULD_REBUILD=true
 else
-    echo "Dependencies installed successfully."
-    exit 0
+  if ! grep -q "$OS_ID" "$SYSEXT_RELEASE" || ! grep -q "$VERSION_ID" "$SYSEXT_RELEASE"; then
+    echo "OS version mismatch in extension-release. Rebuilding."
+    SHOULD_REBUILD=true
+  fi
 fi
+
+if [ "$SHOULD_REBUILD" = true ]; then
+  echo "Cleaning up old build (if any)..."
+  rm -rf "$SYSEXT_DIR"
+  rm -f "$SYSEXT_RAW"
+
+  mkdir -p "$SYSEXT_DIR"
+
+  for pkg in *.pkg.tar.zst; do
+    tar --use-compress-program=unzstd -xf "$pkg" -C "$SYSEXT_DIR"
+  done
+
+  mkdir -p "$(dirname "$SYSEXT_RELEASE")"
+  echo "$OS_ID" > "$SYSEXT_RELEASE"
+  echo "$VERSION_ID" >> "$SYSEXT_RELEASE"
+
+  chown -R root:root "$SYSEXT_DIR"
+
+  echo "Creating squashfs image..."
+  mksquashfs "$SYSEXT_DIR" "$SYSEXT_RAW" -comp zstd -all-root -noappend
+else
+  echo "Existing extension-release matches OS version. Skipping rebuild."
+fi
+
+# Link the .raw to system extension dir
+mkdir -p /var/lib/extensions
+if [ ! -f "$SYSEXT_DESTINATION" ]; then
+  ln -s "$PWD/muon.raw" "$SYSEXT_DESTINATION"
+else
+  echo "Extension already linked."
+fi
+
+# Enable and refresh systemd-sysext
+if ! systemctl is-active --quiet systemd-sysext; then
+  systemctl enable systemd-sysext
+  systemctl start systemd-sysext
+fi
+
+systemd-sysext refresh
+
+echo "Dependencies installed successfully and extension linked."
