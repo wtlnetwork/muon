@@ -169,8 +169,8 @@ class Plugin:
     async def is_hotspot_active(self) -> bool:
         # Checks if the hostapd service is running.
         try:
-            result = await self.run_command("systemctl is-active hostapd", check=False)
-            is_active = result.strip() == "active"
+            result = await self.run_command("pgrep -x hostapd", check=False)
+            is_active = bool(result.strip())
             decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
             return is_active
         except Exception as e:
