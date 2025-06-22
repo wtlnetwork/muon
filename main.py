@@ -178,6 +178,8 @@ class Plugin:
             passphrase
         ])
 
+        decky.logger.info(f"Hotspot start command result: {result}")
+
         if "Hotspot started successfully" in result:
             self.hotspot_active = True
             decky.logger.info("Hotspot is active.")

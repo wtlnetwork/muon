@@ -106,9 +106,9 @@ if [ $? -ne 0 ]; then
     echo "Failed to start hostapd."
     exit 1
 fi
-echo "Hotspot started successfully."
+
 # Momentary pause to allow hostapd to get started. Helps avoid a race condition
-sleep 2
+sleep 1
 echo "Verifying hostapd control interface..."
 
 # Check if the control socket was created
@@ -128,6 +128,6 @@ if [ $? -ne 0 ]; then
 fi
 echo "hostapd_cli connection successful."
 
-echo "Hotspot setup complete."
+echo "Hotspot started successfully."
 
 exit 0
