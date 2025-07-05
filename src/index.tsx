@@ -13,7 +13,7 @@ import {
   toaster,
   call
 } from "@decky/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
@@ -47,6 +47,7 @@ function Content() {
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
+  const announcedDevicesRef = useRef<Set<string>>(new Set());
   const [ipAddress, setIpAddress] = useState<string>("");
 
   useEffect(() => {
@@ -129,17 +130,53 @@ function Content() {
       try {
         const devices = await getConnectedDevices();
         console.log("Connected Devices Response:", devices);
-    
-        // If devices is a JSON string, parse it
+
+        // Parse device list safely
         const parsedDevices = typeof devices === "string" ? JSON.parse(devices) : devices;
-    
-        // Ensure it's an array before setting state
-        setConnectedDevices(Array.isArray(parsedDevices) ? parsedDevices : []);
+        const newDeviceList = (Array.isArray(parsedDevices) ? parsedDevices : [])
+          .filter(d => d.ip && d.hostname);
+
+        // Gather all MACs from device list
+        const newMacSet = new Set(newDeviceList.map(d => d.mac));
+
+        // The *current* announced devices at this poll
+        const prevAnnounced = announcedDevicesRef.current;
+        const updatedAnnounced = new Set(prevAnnounced);
+
+        // Detect new connections
+        for (const device of newDeviceList) {
+          if (!prevAnnounced.has(device.mac)) {
+            toaster.toast({
+              title: "Device Connected",
+              body: `Device ${device.hostname} has connected (${device.ip})`
+            });
+            updatedAnnounced.add(device.mac);
+          }
+        }
+
+        // Detect disconnections
+        for (const mac of prevAnnounced) {
+          if (!newMacSet.has(mac)) {
+            toaster.toast({
+              title: "Device Disconnected",
+              body: `Device with MAC ${mac} has disconnected`
+            });
+            updatedAnnounced.delete(mac);
+          }
+        }
+
+        // Store updated device list and the updated announcements
+        setConnectedDevices(newDeviceList);
+        announcedDevicesRef.current = updatedAnnounced;
+
       } catch (error) {
         console.error("Failed to fetch connected devices:", error);
-        setConnectedDevices([]); // Set to empty array on error
+        setConnectedDevices([]);
       }
     };
+
+
+
   
     // Poll every 5 seconds when hotspot is running
     if (hotspotStatus === "running") {
@@ -224,20 +261,22 @@ function Content() {
             onClick={async () => {
               setInstallingDependencies(true);
               toaster.toast({ title: "Installing Dependencies", body: "Please wait..." });
-  
+
               const result = await installDependencies();
               if (result.success) {
                 toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
-  
+
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
                 const updatedDeps = await checkDependencies();
                 setDependencies(updatedDeps);
-  
+
                 const hotspotActive = await isHotspotActive();
                 setHotspotStatus(hotspotActive ? "running" : "stopped");
               } else {
                 toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
               }
-  
+
               setInstallingDependencies(false);
             }}
           >
