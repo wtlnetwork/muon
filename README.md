@@ -1,6 +1,6 @@
 # **Muon - Ad-Hoc connection for the Steam Deck**
 
-A decky-loader plugin that creates a WiFi access point for another Steam Deck to connect.
+A decky-loader plugin that creates a WiFi access point for another Devices to connect.
 
 <div align="left" valign="middle">
  <picture>
@@ -19,9 +19,10 @@ A decky-loader plugin that creates a WiFi access point for another Steam Deck to
  </picture>
 </a>
 
-**List of Options Include:**
-* 1 Steam Deck needs to download the plugin; the guest is not required to do so.
-* Random host password generation per device restart
+**List of Features:**
+* 1 Steam Deck needs to download the plugin for hosting; guests are not required to do so.
+* Random host password generation per device restart (option to keep it static)
+* Toaster notifictions for joined & disconnected devices
 * Option to change hostname for the Steam Deck
 * Option for credentials being remembered for quick access
 
@@ -55,8 +56,7 @@ __Here are a sample of games verified for Muon!__
 </body>
 </html>
 
-## LAN Games:
-__If you don't have many LAN PvP and/or Co-Op enabled games in you libaray, have a browse here for suggestions!__
+## Join the Steam Group for Verified games!
 
 Official Muon Steam Group: 
 * [Muon Verified](https://steamcommunity.com/groups/muonverified)
@@ -66,10 +66,9 @@ Official Muon Steam Group:
 
 ## Planned Updates:
 
-* Create custom Host IP address in Wi-Fi settings (0.1.5 release) ✔
-* Nix Intergration (Seeking assistance)
-* Testing NetworkManager build (not garenteed)
-* decky-loader plugin store release (0.1.6)
+* decky-loader plugin store release (0.1.6) ✔
+* QoL & Bug Fixes based of from feedback (0.1.7+)
+* RemotePlayWhatever & LAN over USB-C Cable Intergration (0.4.0)?
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
@@ -97,8 +96,10 @@ Animated Steam Deck by: Valve Software
 
 Tormak9970 - Used Deck-P2P as a reference point.
 
+steve228uk - Used TunnelDeck as reference for installing dependancies locally
+
 
 ## Project members
-**Jenomorph** - Project lead / Bug Tester
+**Jenomorph** - Project lead / Bug Tester / Game Verifier 
 
 **WTLNetwork** - Developer
