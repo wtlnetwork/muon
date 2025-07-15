@@ -52,5 +52,19 @@
       ]
     }
   },
-  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
+  "remote_binary_bundling": false,
+  "remote_binary":
+  [
+    {
+      "name": "dnsmasq-2.90-2-x86_64.pkg.tar.zst",
+      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/dnsmasq-2.90-2-x86_64.pkg.tar.zst",
+      "sha256hash": "2ccceabad3af148408467c7642306faf68b6a588eb6a434cbdde5502c55e2404"
+    },
+    {
+      "name": "hostapd-2.11-4-x86_64.pkg.tar.zst",
+      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/hostapd-2.11-4-x86_64.pkg.tar.zst",
+      "sha256hash": "5085046d71c49f741218b10a19e1eaa3bb25a337fd6829018982a72535903d3d"
+    }
+  ]
 }

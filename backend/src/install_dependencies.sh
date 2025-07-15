@@ -5,13 +5,9 @@ SYSEXT_DIR="./muon"
 SYSEXT_RAW="./muon.raw"
 SYSEXT_DESTINATION="/var/lib/extensions/muon.raw"
 SYSEXT_RELEASE="${SYSEXT_DIR}/usr/lib/extension-release.d/extension-release.muon"
-PACKAGE_LIST="./package_url.list"
 
 OS_ID="ID=steamos"
 VERSION_ID=$(grep VERSION_ID /etc/os-release)
-
-# Download packages if not already there
-wget -q -nc -i "$PACKAGE_LIST"
 
 # Determine whether to rebuild
 SHOULD_REBUILD=false
@@ -33,7 +29,7 @@ if [ "$SHOULD_REBUILD" = true ]; then
 
   mkdir -p "$SYSEXT_DIR"
 
-  for pkg in *.pkg.tar.zst; do
+  for pkg in ../../bin/*.pkg.tar.zst; do
     tar --use-compress-program=unzstd -xf "$pkg" -C "$SYSEXT_DIR"
   done
 
