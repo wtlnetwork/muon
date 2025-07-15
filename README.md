@@ -22,7 +22,7 @@ A decky-loader plugin that creates a WiFi access point for another Devices to co
 **List of Features:**
 * 1 Steam Deck needs to download the plugin for hosting; guests are not required to do so.
 * Random host password generation per device restart (option to keep it static)
-* Toaster notifictions for joined & disconnected devices
+* Toaster notifications for joined & disconnected devices
 * Option to change hostname for the Steam Deck
 * Option for credentials being remembered for quick access
 
@@ -68,7 +68,7 @@ Official Muon Steam Group:
 
 * decky-loader plugin store release (0.1.6) ✔
 * QoL & Bug Fixes based of from feedback (0.1.7+)
-* RemotePlayWhatever & LAN over USB-C Cable Intergration (0.4.0)?
+* RemotePlayWhatever & LAN over USB-C Cable Integration (0.4.0)?
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
@@ -96,7 +96,7 @@ Animated Steam Deck by: Valve Software
 
 Tormak9970 - Used Deck-P2P as a reference point.
 
-steve228uk - Used TunnelDeck as reference for installing dependancies locally
+steve228uk - Used TunnelDeck as reference for installing dependencies locally
 
 
 ## Project members
