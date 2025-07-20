@@ -4,6 +4,7 @@ import asyncio
 import re
 import decky
 import subprocess
+from pathlib import Path
 from settings import SettingsManager
 
 class Plugin:
@@ -11,6 +12,7 @@ class Plugin:
     def __init__(self):
         self.wifi_interface = "wlan0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
+        self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "defaults/assets"
         decky.logger.info(f"Settings path: {os.path.join(self.settingsDir, 'hotspot_settings.json')}")
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
@@ -37,7 +39,7 @@ class Plugin:
             await self.stop_hotspot()
 
         decky.logger.info("Cleaning up dependencies.")
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/remove_dependencies.sh")
+        script_path = os.path.join(self.assetsDir, "remove_dependencies.sh")
         await self.run_command(
             f"bash {script_path}"
         )
@@ -59,7 +61,7 @@ class Plugin:
                     decky.logger.warning("[Settings] Stored credentials missing! Generating failsafe.")
                     stored_ssid = await self.get_hostname()
                     stored_passphrase = self.generate_random_password()
-                    self.save_credentials(stored_ssid, stored_passphrase, True)
+                    await self.update_credentials(stored_ssid, stored_passphrase, True)
 
                 self.ssid = stored_ssid
                 self.passphrase = stored_passphrase
@@ -147,7 +149,7 @@ class Plugin:
     async def stop_hotspot(self):
         decky.logger.info("Stopping Hotspot")
         try:
-            script_path = os.path.join(os.path.dirname(__file__), "backend/src/stop_hotspot.sh")
+            script_path = os.path.join(self.assetsDir, "stop_hotspot.sh")
             dns_servers = ",".join(self.original_dns) if self.original_dns else ""
 
             decky.logger.info("Restoring network configuration")
@@ -179,7 +181,7 @@ class Plugin:
 
     async def start_wifi_ap(self, ssid, passphrase):
         decky.logger.info("Starting Hotspot")
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_hotspot.sh")
+        script_path = os.path.join(self.assetsDir, "start_hotspot.sh")
 
         result = await self.run_command([
             "bash",
@@ -236,7 +238,7 @@ class Plugin:
 
     async def install_dependencies(self):
         # Path to install script
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/install_dependencies.sh")
+        script_path = os.path.join(self.assetsDir, "install_dependencies.sh")
 
 
         # Set working directory to where package_url.list lives
@@ -262,7 +264,7 @@ class Plugin:
 
     # NETWORK CONFIGURATION AND SERVICE METHODS
     async def capture_network_config(self):
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/extract_network_config.sh")
+        script_path = os.path.join(self.assetsDir, "extract_network_config.sh")
         decky.logger.info("Extracting network configuration via Shell Script")
 
         result = await self.run_command(f"bash {script_path} {self.wifi_interface}")
@@ -309,7 +311,7 @@ class Plugin:
 
     async def configure_firewalld(self):
         # Configure firewalld for broadcast and DHCP traffic using a shell script.
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/change_firewall_settings.sh")
+        script_path = os.path.join(self.assetsDir, "change_firewall_settings.sh")
 
         decky.logger.info("Configuring firewalld...")
 
@@ -353,7 +355,7 @@ class Plugin:
 
     async def start_dhcp_server(self):
         # Start the DHCP server using a shell script.
-        script_path = os.path.join(os.path.dirname(__file__), "backend/src/start_dhcp_server.sh")
+        script_path = os.path.join(self.assetsDir, "start_dhcp_server.sh")
 
         decky.logger.info("Starting DHCP Server.")
 
