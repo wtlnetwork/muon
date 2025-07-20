@@ -12,7 +12,7 @@ class Plugin:
     def __init__(self):
         self.wifi_interface = "wlan0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
-        self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "defaults/assets"
+        self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "assets"
         decky.logger.info(f"Settings path: {os.path.join(self.settingsDir, 'hotspot_settings.json')}")
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
