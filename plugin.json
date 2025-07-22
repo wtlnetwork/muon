@@ -6,6 +6,6 @@
   "publish": {
     "tags": ["adhoc", "wifi", "p2p", "multiplayer", "root"],
     "description": "Ad-hoc WiFi networking plugin for Decky.",
-    "image": "https://github.com/wtlnetwork/muon/blob/main/assets/logo.png"
+    "image": "https://raw.githubusercontent.com/wtlnetwork/muon/refs/heads/main/assets/logo.png"
   }
 }
