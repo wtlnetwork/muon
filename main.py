@@ -13,7 +13,6 @@ class Plugin:
         self.wifi_interface = "wlan0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
         self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "assets"
-        decky.logger.info(f"Settings path: {os.path.join(self.settingsDir, 'hotspot_settings.json')}")
         self.ip_address = "192.168.8.1"
         self.dhcp_range = "192.168.8.100,192.168.8.200,12h"
         self.hotspot_active = False
@@ -240,15 +239,11 @@ class Plugin:
         # Path to install script
         script_path = os.path.join(self.assetsDir, "install_dependencies.sh")
 
-
-        # Set working directory to where package_url.list lives
-        extensions_dir = os.path.join(os.path.dirname(__file__), "defaults/extensions")
-
         decky.logger.info(f"Installing dependencies via shell script.")
 
         result = await self.run_command(
             f"bash {script_path}",
-            cwd=extensions_dir
+            cwd=self.assetsDir
         )
 
         # Recheck dependencies after script runs

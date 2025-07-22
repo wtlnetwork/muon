@@ -29,7 +29,7 @@ if [ "$SHOULD_REBUILD" = true ]; then
 
   mkdir -p "$SYSEXT_DIR"
 
-  for pkg in ../../bin/*.pkg.tar.zst; do
+  for pkg in ../bin/*.pkg.tar.zst; do
     tar --use-compress-program=unzstd -xf "$pkg" -C "$SYSEXT_DIR"
   done
 
