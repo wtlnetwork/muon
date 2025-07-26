@@ -569,8 +569,8 @@ class Plugin:
                     cwd=cwd
                 )
             else:
-                result = await asyncio.create_subprocess_exec(
-                    "/bin/bash", "-c", command,
+                    result = await asyncio.create_subprocess_exec(
+                        "/usr/bin/env", "bash", "-c", command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     env=env,
