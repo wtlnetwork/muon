@@ -60,11 +60,6 @@
       "name": "dnsmasq-2.90-2-x86_64.pkg.tar.zst",
       "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/dnsmasq-2.90-2-x86_64.pkg.tar.zst",
       "sha256hash": "2ccceabad3af148408467c7642306faf68b6a588eb6a434cbdde5502c55e2404"
-    },
-    {
-      "name": "hostapd-2.11-4-x86_64.pkg.tar.zst",
-      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/hostapd-2.11-4-x86_64.pkg.tar.zst",
-      "sha256hash": "5085046d71c49f741218b10a19e1eaa3bb25a337fd6829018982a72535903d3d"
     }
   ]
 }

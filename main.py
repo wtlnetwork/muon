@@ -154,7 +154,7 @@ class Plugin:
             decky.logger.info("Restoring network configuration")
 
             result = await self.run_command(
-                f"bash {script_path} {self.wifi_interface} {self.original_ip or ''} {self.original_gateway or ''} {dns_servers}"
+                f"bash {script_path} {self.wifi_interface} {self.ssid}"
             )
 
             if "Network configuration restored successfully" in result:
@@ -168,15 +168,25 @@ class Plugin:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
 
     async def is_hotspot_active(self) -> bool:
-        # Checks if the hostapd service is running.
-        try:
-            result = await self.run_command("pgrep -x hostapd", check=False)
-            is_active = bool(result.strip())
-            decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
-            return is_active
-        except Exception as e:
-            decky.logger.error(f"Error checking hotspot status: {e}")
-            return False
+        # List active network manager connections in order to find our interface.
+        connections = await self.run_command(
+                "nmcli -t -f NAME,TYPE,DEVICE con show --active", check=False
+            )
+        active = False
+        if connections:
+            for connection in connections.splitlines():
+                parts = connection.split(":")
+                if len(parts) >= 3 and parts[1] == "wifi" and parts[2] == self.wifi_interface:
+                    con_name = parts[0]
+                    mode = await self.run_command(
+                            f'nmcli -g 802-11-wireless.mode connection show "{con_name}"',
+                            check=False
+                        )
+                    if mode.strip() == "ap":
+                        active = True
+                        break
+        decky.logger.info(f"Hotspot status: {'Active' if active else 'Inactive'}")
+        return active
 
     async def start_wifi_ap(self, ssid, passphrase):
         decky.logger.info("Starting Hotspot")
@@ -227,7 +237,7 @@ class Plugin:
     async def check_dependencies(self):
         # Ensure required dependencies are installed.
         statuses = {}
-        for dep in ["dnsmasq", "hostapd"]:
+        for dep in ["dnsmasq"]:
             result = await self.run_command(f"which {dep}")
             statuses[dep] = bool(result)
             if not result:
