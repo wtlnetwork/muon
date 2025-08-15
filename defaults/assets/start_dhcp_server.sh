@@ -4,6 +4,7 @@ DNSMASQ_LOG="/var/log/dnsmasq.log"
 WIFI_INTERFACE=$1
 DHCP_RANGE=$2
 IP_ADDRESS=$3
+AP_IF="muon0"
 
 # Remove old dnsmasq configuration.
 if [ -f "$DNSMASQ_CONFIG" ]; then
@@ -14,7 +15,7 @@ fi
 # Generate new dnsmasq config.
 echo "Generating new dnsmasq config..."
 cat <<EOT > "$DNSMASQ_CONFIG"
-interface=$WIFI_INTERFACE
+interface=$AP_IF
 bind-dynamic
 dhcp-range=$DHCP_RANGE
 dhcp-option=3,$IP_ADDRESS  # Gateway

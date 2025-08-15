@@ -11,6 +11,7 @@ class Plugin:
     # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
         self.wifi_interface = "wlan0"
+        self.ap_interface = "muon0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
         self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "assets"
         self.ip_address = "192.168.8.1"
@@ -388,7 +389,7 @@ class Plugin:
         decky.logger.info("Fetching connected devices...")
 
         # Hostapd and dnsmasq locations
-        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.wifi_interface} all_sta"
+        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.ap_interface} all_sta"
         dnsmasq_leases_file = "/var/lib/misc/dnsmasq.leases"
 
         # Dictionary to store device info
@@ -454,7 +455,7 @@ class Plugin:
         """Kick and block a MAC address from the hotspot."""
         try:
             # Deauthenticate the device (kick it off the hotspot)
-            result = await self.run_command(f"hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
+            result = await self.run_command(f"hostapd_cli -i {self.ap_interface} deauthenticate {mac_address}")
 
             if not result or "OK" not in result:
                 decky.logger.error(f"Failed to kick MAC address: {mac_address}. Response: {result}")
