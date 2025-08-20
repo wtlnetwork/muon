@@ -527,7 +527,7 @@ class Plugin:
             decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
 
             # Reload hostapd configuration
-            reload_result = await self.run_command("sudo systemctl reload hostapd")
+            reload_result = await self.run_command(f"hostapd_cli -p /var/run/hostapd -i {self.ap_interface} reload")
 
             if reload_result.strip() == "":  # Success if output is empty
                 decky.logger.info("Reloaded hostapd configuration successfully.")
