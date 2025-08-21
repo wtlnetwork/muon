@@ -14,6 +14,15 @@ echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
 
+AP_IF="muon0"
+
+PHY=$(iw dev "$WIFI_INTERFACE" info 2>/dev/null | awk '/wiphy/ {print "phy"$2}')
+if [ -z "$PHY" ]; then
+    echo "Error: Unable to determine the PHY for interface $WIFI_INTERFACE."
+    exit 1
+fi
+echo "Using PHY $PHY to create $AP_IF"
+
 # Step 1: Stop Network Services
 echo "Stopping network services..."
 sudo systemctl stop NetworkManager
@@ -24,34 +33,42 @@ if [ $? -ne 0 ]; then
 fi
 echo "Network services stopped."
 
-# Step 2: Configure Static IP
-echo "Configuring static IP for $WIFI_INTERFACE..."
+# Step 2: Create AP interface (muon0) and configure static IP there
+echo "Setting static IP for $AP_IF on $PHY"
 
-# Flush the existing IP configuration from the interface
-echo "Flushing existing IP configuration on $WIFI_INTERFACE..."
-sudo ip addr flush dev $WIFI_INTERFACE
+# If muon0 already exists from a previous run, remove it cleanly
+if ip link show "$AP_IF" >/dev/null 2>&1; then
+  echo "$AP_IF already exists; deleting it first..."
+  sudo iw dev "$AP_IF" del || true
+  sleep 0.5
+fi
 
-# Check if the interface already has the correct IP assigned
-echo "Checking if $STATIC_IP is already assigned to $WIFI_INTERFACE..."
-EXISTING_IP=$(ip addr show $WIFI_INTERFACE | grep -oP 'inet \K[\d.]+')
+echo "Bringing down $WIFI_INTERFACE to prepare for $AP_IF..."
+sudo ip link set "$WIFI_INTERFACE" down
 
-if [ "$EXISTING_IP" == "$STATIC_IP" ]; then
-    echo "IP $STATIC_IP is already assigned to $WIFI_INTERFACE. Skipping re-assignment."
+# Create a new virtual interface on the same PHY
+if ! sudo iw phy "$PHY" interface add "$AP_IF" type __ap; then
+  echo "Failed to create $AP_IF on $PHY."
+  exit 1
+fi
+
+# Bring it up
+sudo ip link set "$AP_IF" up
+
+# Assign the static IP to muon0
+echo "Assigning IP $STATIC_IP/24 to $AP_IF..."
+sudo ip addr flush dev "$AP_IF" || true
+sudo ip addr add "$STATIC_IP/24" dev "$AP_IF"
+sleep 1
+
+# Validate the IP assignment
+echo "Validating IP assignment on $AP_IF..."
+FINAL_IP_CHECK=$(ip addr show "$AP_IF" | grep -oP 'inet \K[\d.]+')
+if [ "$FINAL_IP_CHECK" != "$STATIC_IP" ]; then
+  echo "Failed to assign IP $STATIC_IP to $AP_IF."
+  exit 1
 else
-    # Assign the static IP to the interface
-    echo "Assigning IP $STATIC_IP/24 to $WIFI_INTERFACE..."
-    sudo ip addr add "$STATIC_IP/24" dev "$WIFI_INTERFACE"
-    sleep 1
-
-    # Validate the IP assignment
-    echo "Validating IP assignment..."
-    FINAL_IP_CHECK=$(ip addr show $WIFI_INTERFACE | grep "$STATIC_IP")
-    if [ -z "$FINAL_IP_CHECK" ]; then
-        echo "Failed to assign IP $STATIC_IP to $WIFI_INTERFACE."
-        exit 1
-    else
-        echo "Successfully assigned IP $STATIC_IP to $WIFI_INTERFACE."
-    fi
+  echo "Successfully assigned IP $STATIC_IP to $AP_IF."
 fi
 
 # Step 3: Prepare Control Interface Directory
@@ -75,7 +92,7 @@ echo "Starting hotspot with SSID: $SSID"
 # Generate hostapd configuration
 echo "Generating hostapd configuration..."
 cat <<EOT | sudo tee $HOSTAPD_CONF > /dev/null
-interface=$WIFI_INTERFACE
+interface=$AP_IF
 driver=nl80211
 ssid=$SSID
 hw_mode=g
@@ -105,7 +122,7 @@ echo "Hotspot started successfully."
 echo "Verifying hostapd control interface..."
 
 # Check if the control socket was created
-if [ -e "$CTRL_INTERFACE_DIR/$WIFI_INTERFACE" ]; then
+if [ -e "$CTRL_INTERFACE_DIR/$AP_IF" ]; then
     echo "Control interface socket exists."
 else
     echo "Control interface socket not found. Check hostapd logs for issues."
@@ -114,7 +131,7 @@ fi
 
 # Test hostapd_cli connection
 echo "Testing hostapd_cli connection..."
-sudo hostapd_cli -p "$CTRL_INTERFACE_DIR" -i "$WIFI_INTERFACE" status
+sudo hostapd_cli -p "$CTRL_INTERFACE_DIR" -i "$AP_IF" status
 if [ $? -ne 0 ]; then
     echo "Failed to connect to hostapd using hostapd_cli."
     exit 1

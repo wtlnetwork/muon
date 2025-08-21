@@ -1,6 +1,6 @@
 {
   "name": "muon",
-  "version": "0.1.6.2",
+  "version": "0.1.7",
   "description": "Ad-hoc WiFi networking plugin for Decky.",
   "type": "module",
   "scripts": {
@@ -57,9 +57,9 @@
   "remote_binary":
   [
     {
-      "name": "dnsmasq-2.90-2-x86_64.pkg.tar.zst",
-      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/dnsmasq-2.90-2-x86_64.pkg.tar.zst",
-      "sha256hash": "2ccceabad3af148408467c7642306faf68b6a588eb6a434cbdde5502c55e2404"
+      "name": "dnsmasq-2.91-1-x86_64.pkg.tar.zst",
+      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/dnsmasq-2.91-1-x86_64.pkg.tar.zst",
+      "sha256hash": "7706d35ea76993c8e10068eb4190ef25e7d712c054a2b5df267848d71a41f650"
     },
     {
       "name": "hostapd-2.11-4-x86_64.pkg.tar.zst",

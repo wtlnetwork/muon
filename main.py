@@ -11,6 +11,7 @@ class Plugin:
     # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
         self.wifi_interface = "wlan0"
+        self.ap_interface = "muon0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
         self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "assets"
         self.ip_address = "192.168.8.1"
@@ -42,6 +43,36 @@ class Plugin:
         await self.run_command(
             f"bash {script_path}"
         )
+
+    # SYSEXT METHODS
+    async def activate_muon_sysext(self):
+        muon_raw = os.path.join(self.assetsDir, "muon.raw")
+        link_path = "/var/lib/extensions/muon.raw"
+        if not os.path.exists(muon_raw):
+            decky.logger.warning("muon.raw not found - attempting to build via install script.")
+            await self.run_command(f"bash {os.path.join(self.assetsDir, 'install_dependencies.sh')}")
+
+        # Link into /var/lib/extensions so refresh will include it
+        await self.run_command(f"sudo ln -sf '{muon_raw}' '{link_path}'")
+        # Refresh sysext to include Muon
+        try:
+            out = await self.run_command("systemd-sysext refresh")
+            decky.logger.info(f"sysext refresh output: {out}")
+        except Exception as e:
+            decky.logger.error(f"sysext refresh after activation failed: {e}")
+
+    async def deactivate_muon_sysext(self):
+        link_path = "/var/lib/extensions/muon.raw"
+        if os.path.exists(link_path) or os.path.islink(link_path):
+            await self.run_command(f"sudo rm -f '{link_path}'")
+
+        # Refresh sysext after removing Muon
+        try:
+            out = await self.run_command("systemd-sysext refresh")
+            decky.logger.info(f"sysext refresh output: {out}")
+        except Exception as e:
+            decky.logger.error(f"sysext refresh after deactivation failed: {e}")
+
 
     # SETTINGS METHODS
     async def load_settings(self):
@@ -129,8 +160,9 @@ class Plugin:
                 if not ssid or not passphrase:
                     decky.logger.error("SSID or Passphrase is missing! Aborting.")
                     return False
-
-                await self.check_dependencies()
+                
+                await self.activate_muon_sysext()
+                await self.check_dependencies(temporary_sysext=False)
                 await self.configure_firewalld()
                 await self.ensure_wlan0_up()
                 await self.capture_network_config()
@@ -138,12 +170,25 @@ class Plugin:
                 await self.start_wifi_ap(ssid, passphrase)
                 await self.start_dhcp_server()
 
-                self.hotspot_active = True
-                decky.logger.info("Hotspot is active")
-                self.wlan_ip = await self.run_command(fr"ip addr show {self.wifi_interface} | grep -oP 'inet \K[\d.]+/\d+'")
+                decky.logger.info("Hotspot activated.")
+                self.wlan_ip = await self.run_command(fr"ip addr show {self.ap_interface} | grep -oP 'inet \K[\d.]+/\d+'")
                 decky.logger.info(f"Using WLAN IP address: {self.wlan_ip}")
+
+                decky.logger.info("Checking if hotspot activated successfully...")
+                # Failsafe - if the hotspot is not actually running after this, cleanly bring the WiFi back online.
+                if not await self.is_hotspot_active():
+                    decky.logger.error("Failsafe triggered: Hotspot did not start correctly.")
+                    await self.stop_hotspot()
+                    self.hotspot_active = False
+                    return False
+                
+                self.hotspot_active = True
+                decky.logger.info("Hotspot started successfully.")
+                return True
+
             except Exception as e:
                 decky.logger.error(f"Failed to start hotspot: {str(e)}")
+                return False
 
     async def stop_hotspot(self):
         decky.logger.info("Stopping Hotspot")
@@ -162,7 +207,7 @@ class Plugin:
                 decky.logger.info("Network configuration restored successfully.")
             else:
                 decky.logger.error("Failed to restore network configuration.")
-
+            await self.deactivate_muon_sysext()
             decky.logger.info("Hotspot stopped")
         except Exception as e:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
@@ -224,16 +269,28 @@ class Plugin:
             return False  # Default to not blocked if there's an error
 
     # DEPENDENCY MANAGEMENT METHODS
-    async def check_dependencies(self):
+    async def check_dependencies(self, temporary_sysext=True):
         # Ensure required dependencies are installed.
-        statuses = {}
-        for dep in ["dnsmasq", "hostapd"]:
-            result = await self.run_command(f"which {dep}")
-            statuses[dep] = bool(result)
-            if not result:
-                decky.logger.error(f"ERROR: `{dep}` is not installed.")
-        decky.logger.info("Dependency statuses: " + str(statuses))
-        return statuses
+        try:
+            if temporary_sysext:
+                await self.activate_muon_sysext()
+
+            statuses = {}
+            for dep in ["dnsmasq", "hostapd"]:
+                result = await self.run_command(f"which {dep}")
+                statuses[dep] = bool(result)
+                if not result:
+                    decky.logger.error(f"ERROR: `{dep}` is not installed.")
+            decky.logger.info("Dependency statuses: " + str(statuses))
+            return statuses
+        finally:
+            # Deactivate Muon sysext after checking dependencies
+            try:
+                if temporary_sysext:
+                    await self.deactivate_muon_sysext()
+                    decky.logger.info("Muon sysext deactivated after dependency check.")
+            except Exception as e:
+                decky.logger.error(f"Failed to deactivate Muon sysext after check: {e}")
 
     async def install_dependencies(self):
         # Path to install script
@@ -388,7 +445,7 @@ class Plugin:
         decky.logger.info("Fetching connected devices...")
 
         # Hostapd and dnsmasq locations
-        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.wifi_interface} all_sta"
+        hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.ap_interface} all_sta"
         dnsmasq_leases_file = "/var/lib/misc/dnsmasq.leases"
 
         # Dictionary to store device info
@@ -454,7 +511,7 @@ class Plugin:
         """Kick and block a MAC address from the hotspot."""
         try:
             # Deauthenticate the device (kick it off the hotspot)
-            result = await self.run_command(f"hostapd_cli -i {self.wifi_interface} deauthenticate {mac_address}")
+            result = await self.run_command(f"hostapd_cli -i {self.ap_interface} deauthenticate {mac_address}")
 
             if not result or "OK" not in result:
                 decky.logger.error(f"Failed to kick MAC address: {mac_address}. Response: {result}")
@@ -470,7 +527,7 @@ class Plugin:
             decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
 
             # Reload hostapd configuration
-            reload_result = await self.run_command("sudo systemctl reload hostapd")
+            reload_result = await self.run_command(f"hostapd_cli -p /var/run/hostapd -i {self.ap_interface} reload")
 
             if reload_result.strip() == "":  # Success if output is empty
                 decky.logger.info("Reloaded hostapd configuration successfully.")
