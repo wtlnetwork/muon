@@ -10,6 +10,7 @@ from settings import SettingsManager
 class Plugin:
     # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
+        self.debug = False
         self.wifi_interface = "wlan0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
         self.assetsDir = Path(decky.DECKY_PLUGIN_DIR) / "assets"
@@ -578,6 +579,9 @@ class Plugin:
                 )
 
             stdout, stderr = await result.communicate()
+            if self.debug:
+                if stdout:
+                    decky.logger.debug(f"Command output: {stdout.decode().strip()}")
             if stderr:
                 decky.logger.error(f"Command error: {stderr.decode().strip()}")
             return stdout.decode().strip()

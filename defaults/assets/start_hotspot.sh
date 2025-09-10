@@ -69,6 +69,11 @@ sudo chown root:root "$CTRL_INTERFACE_DIR"
 sudo chmod 755 "$CTRL_INTERFACE_DIR"
 echo "Control interface directory is ready."
 
+echo "Checking if hostapd.deny file exists..."
+
+# Create an empty deny file if it doesn't exist
+mkdir -p /etc/hostapd && touch /etc/hostapd/hostapd.deny
+
 # Step 4: Start Hotspot
 echo "Starting hotspot with SSID: $SSID"
 
