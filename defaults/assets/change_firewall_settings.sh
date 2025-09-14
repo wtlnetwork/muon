@@ -36,6 +36,12 @@ sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 source
 echo "Allowing DHCP traffic..."
 sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-service=dhcp --permanent
 
+# Check if the muon0 interface is in the active zone and add it if it isn't
+if ! sudo firewall-cmd --zone="$ACTIVE_ZONE" --list-interfaces | grep -qw muon0; then
+    echo "Adding muon0 to zone $ACTIVE_ZONE..."
+    sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-interface=muon0 --permanent
+fi
+
 # Reload firewalld to apply changes
 echo "Reloading firewalld to apply changes..."
 FIREWALLD_RELOAD=$(sudo firewall-cmd --reload)

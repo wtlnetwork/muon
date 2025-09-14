@@ -413,7 +413,7 @@ class Plugin:
         decky.logger.info("Starting DHCP Server.")
 
         result = await self.run_command(
-            f"bash {script_path} {self.wifi_interface} {self.dhcp_range} {self.ip_address}"
+            f"bash {script_path} {self.ap_interface} {self.dhcp_range} {self.ip_address}"
         )
 
         if "dnsmasq is running" in result:
