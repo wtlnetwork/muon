@@ -98,8 +98,10 @@ Tormak9970 - Used Deck-P2P as a reference point.
 
 steve228uk - Used TunnelDeck as reference for installing dependencies locally
 
+@Tormak9970 and @jessebofill - Used code from [TabMaster](https://github.com/Tormak9970/TabMaster) to implement sleep management after a SteamOS change broke it.
 
 ## Project members
 **Jenomorph** - Project lead / Bug Tester / Game Verifier 
 
 **WTLNetwork** - Developer
+

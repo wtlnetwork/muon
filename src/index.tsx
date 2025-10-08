@@ -18,6 +18,7 @@ import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
 import { BootIcon } from "./banned_devices";
+import { sleepManager } from "./lib/SleepManager";
 
 const startHotspot = callable<[], void>("start_hotspot");
 const stopHotspot = callable<[], void>("stop_hotspot");
@@ -464,12 +465,21 @@ function Content() {
 export default definePlugin(() => {
   console.log("Hotspot plugin initializing");
 
-  const suspendRequestRegistration = window.SteamClient.System.RegisterForOnSuspendRequest(() => {
-    call<[]>("suspend_ap")
-  });
-  const suspendResumeRegistration = window.SteamClient.System.RegisterForOnResumeFromSuspend(() => {
-    call<[]>("resume_ap")
-  });
+  const suspendRequestRegistration =
+    window.SteamClient.System.RegisterForOnSuspendRequest?.bind(window.SteamClient.System) ??
+    sleepManager?.RegisterForNotifyRequestSuspend;
+
+  const suspendResumeRegistration =
+    window.SteamClient.System.RegisterForOnResumeFromSuspend?.bind(window.SteamClient.System) ??
+    sleepManager?.RegisterForNotifyResumeFromSuspend;
+
+  const unregisterSuspend = suspendRequestRegistration
+    ? suspendRequestRegistration(() => call<[]>("suspend_ap"))
+    : { unregister: () => {} };
+
+  const unregisterResume = suspendResumeRegistration
+    ? suspendResumeRegistration(() => call<[]>("resume_ap"))
+    : { unregister: () => {} };
 
   return {
     name: "Muon",
@@ -477,8 +487,8 @@ export default definePlugin(() => {
     content: <Content />, 
     icon: <FaWifi />, 
     onDismount() {
-      suspendRequestRegistration.unregister();
-      suspendResumeRegistration.unregister();
+      unregisterSuspend.unregister();
+      unregisterResume.unregister();
     }
   };
 });

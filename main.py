@@ -434,8 +434,7 @@ class Plugin:
             await self.stop_hotspot()
 
     async def resume_ap(self):
-        # Function for resuming the hotspot after suspension.
-        # At the moment, this just adds a log entry. It's mainly for debugging.
+        # Function for resuming the hotspot after suspension. At the moment, only a log entry.
         decky.logger.info("Resuming from suspension...")
 
 
