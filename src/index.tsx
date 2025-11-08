@@ -5,13 +5,15 @@ import {
   PanelSection,
   PanelSectionRow,
   TextField,
-  staticClasses
+  staticClasses,
 } from "@decky/ui";
 import {
   callable,
   definePlugin,
   toaster,
-  call
+  call,
+  addEventListener,
+  removeEventListener
 } from "@decky/api";
 import { useState, useEffect, useRef } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
@@ -462,8 +464,28 @@ function Content() {
   );
 };
 
+
 export default definePlugin(() => {
   console.log("Hotspot plugin initializing");
+
+  const onMuonDeviceEvent = (payload: any) => {
+    const msg = typeof payload === "string" ? (() => { try { return JSON.parse(payload); } catch { return {}; } })() : payload;
+    if (msg?.type === "connected") {
+      toaster.toast({
+        title: "Device Connected",
+        body: `${msg.hostname ?? "Unknown"} (${msg.ip ?? msg.mac ?? "?"})`,
+        showToast: true,
+      });
+    } else if (msg?.type === "disconnected") {
+      toaster.toast({
+        title: "Device Disconnected",
+        body: msg.hostname ?? msg.mac ?? "Unknown device",
+        showToast: true,
+      });
+    }
+  };
+
+  addEventListener("muon_device_event", onMuonDeviceEvent);
 
   const suspendRequestRegistration =
     window.SteamClient.System.RegisterForOnSuspendRequest?.bind(window.SteamClient.System) ??
@@ -489,6 +511,7 @@ export default definePlugin(() => {
     onDismount() {
       unregisterSuspend.unregister();
       unregisterResume.unregister();
+      removeEventListener("muon_device_event", onMuonDeviceEvent);
     }
   };
 });
