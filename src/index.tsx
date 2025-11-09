@@ -15,7 +15,7 @@ import {
   addEventListener,
   removeEventListener
 } from "@decky/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
@@ -31,6 +31,8 @@ const installDependencies = callable<[], { success: boolean; error?: string }>("
 const getConnectedDevices = callable<[], any>("get_connected_devices");
 const kickMac = callable<[string], boolean>("kick_mac");
 const getIpAddress = callable<[], string>("get_ip_address");
+
+let _muonListenerRegistered = false;
 
 declare global {
   interface Window {
@@ -50,7 +52,6 @@ function Content() {
   const [installingDependencies, setInstallingDependencies] = useState(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
-  const announcedDevicesRef = useRef<Set<string>>(new Set());
   const [ipAddress, setIpAddress] = useState<string>("");
 
   useEffect(() => {
@@ -109,7 +110,6 @@ function Content() {
         setDhcpStart(start);
         setDhcpEnd(end);
   
-        // Fetch dependencies when the effect runs
         const deps = await checkDependencies();
         setDependencies(deps);
   
@@ -129,57 +129,54 @@ function Content() {
   }, []);
 
   useEffect(() => {
+    const needsInstall =
+      dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"]);
+
+    if (needsInstall && !installingDependencies) {
+      (async () => {
+        try {
+          setInstallingDependencies(true);
+          toaster.toast({ title: "Installing dependencies", body: "Please wait..." });
+
+          const result = await installDependencies();
+          if (result.success) {
+            toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
+
+            await new Promise(r => setTimeout(r, 1500));
+
+            const updatedDeps = await checkDependencies();
+            setDependencies(updatedDeps);
+
+            const hotspotActive = await isHotspotActive();
+            setHotspotStatus(hotspotActive ? "running" : "stopped");
+          } else {
+            const err = (result as any)?.error || (result as any)?.missing?.join(", ");
+            toaster.toast({ title: "Error", body: `Failed to install: ${err ?? "unknown error"}` });
+          }
+        } finally {
+          setInstallingDependencies(false);
+        }
+      })();
+    }
+  }, [dependencies, installingDependencies]);
+
+    useEffect(() => {
     const fetchDevices = async () => {
       try {
         const devices = await getConnectedDevices();
-        console.log("Connected Devices Response:", devices);
-
         // Parse device list safely
         const parsedDevices = typeof devices === "string" ? JSON.parse(devices) : devices;
         const newDeviceList = (Array.isArray(parsedDevices) ? parsedDevices : [])
           .filter(d => d.ip && d.hostname);
 
-        // Gather all MACs from device list
-        const newMacSet = new Set(newDeviceList.map(d => d.mac));
-
-        // The *current* announced devices at this poll
-        const prevAnnounced = announcedDevicesRef.current;
-        const updatedAnnounced = new Set(prevAnnounced);
-
-        // Detect new connections
-        for (const device of newDeviceList) {
-          if (!prevAnnounced.has(device.mac)) {
-            toaster.toast({
-              title: "Device Connected",
-              body: `Device ${device.hostname} has connected (${device.ip})`
-            });
-            updatedAnnounced.add(device.mac);
-          }
-        }
-
-        // Detect disconnections
-        for (const mac of prevAnnounced) {
-          if (!newMacSet.has(mac)) {
-            toaster.toast({
-              title: "Device Disconnected",
-              body: `Device with MAC ${mac} has disconnected`
-            });
-            updatedAnnounced.delete(mac);
-          }
-        }
-
         // Store updated device list and the updated announcements
         setConnectedDevices(newDeviceList);
-        announcedDevicesRef.current = updatedAnnounced;
 
       } catch (error) {
         console.error("Failed to fetch connected devices:", error);
         setConnectedDevices([]);
       }
     };
-
-
-
   
     // Poll every 5 seconds when hotspot is running
     if (hotspotStatus === "running") {
@@ -187,7 +184,7 @@ function Content() {
   
       const interval = setInterval(() => {
         fetchDevices();
-      }, 5000); // Poll every 5 seconds
+      }, 2000); // Poll every 5 seconds
   
       return () => clearInterval(interval);
     }
@@ -195,6 +192,7 @@ function Content() {
     // Explicitly return undefined when not polling
     return undefined;
   }, [hotspotStatus]);
+
   
   const spinnerStyle = {
     animation: "spin 1s linear infinite"
@@ -237,68 +235,28 @@ function Content() {
     } catch (error) {
       toaster.toast({ title: "Error", body: "Failed to toggle hotspot." });
     } finally {
-      // Ensure we check the current status before re-enabling the button
       const hotspotActive = await isHotspotActive();
       setHotspotStatus(hotspotActive ? "running" : "stopped");
     }
   };
   
   if (dependencies && (!dependencies["dnsmasq"] || !dependencies["hostapd"])) {
-    const missingDnsmasq = !dependencies["dnsmasq"];
-    const missingHostapd = !dependencies["hostapd"];
-  
+
     return (
-      <PanelSection title="Missing Dependencies">
+      <PanelSection title="Installing dependencies">
         <PanelSectionRow>
-          <p>
-            The following required packages are missing:
-            {missingDnsmasq && <b> dnsmasq</b>}
-            {missingHostapd && <b> hostapd</b>}
-            . You can install them automatically:
-          </p>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="inline"
-            disabled={installingDependencies}
-            onClick={async () => {
-              setInstallingDependencies(true);
-              toaster.toast({ title: "Installing Dependencies", body: "Please wait..." });
-
-              const result = await installDependencies();
-              if (result.success) {
-                toaster.toast({ title: "Success", body: "Dependencies installed successfully!" });
-
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                const updatedDeps = await checkDependencies();
-                setDependencies(updatedDeps);
-
-                const hotspotActive = await isHotspotActive();
-                setHotspotStatus(hotspotActive ? "running" : "stopped");
-              } else {
-                toaster.toast({ title: "Error", body: `Failed to install: ${result.error}` });
-              }
-
-              setInstallingDependencies(false);
-            }}
-          >
-            {installingDependencies ? (
-              <>
-                <FaSpinner className="animate-spin" /> Installing...
-              </>
-            ) : (
-              "Install Missing Dependencies"
-            )}
-          </ButtonItem>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Spinner />
+            <span>{installingDependencies ? "Installing dependencies..." : "Finalizing..."}</span>
+          </div>
         </PanelSectionRow>
       </PanelSection>
     );
-  }  
+  }
+
   
   return (
     <>
-      {/* Hotspot Control Section */}
       <PanelSection title="Hotspot Control">
         <PanelSectionRow>
             <div style={{ flex: 1 }}>
@@ -364,7 +322,6 @@ function Content() {
         )}
       </PanelSection>
   
-      {/* Connected Devices Section */}
       {hotspotStatus === "running" && (
         <PanelSection title="Connected Devices">
         {Array.isArray(connectedDevices) && connectedDevices.length > 0 ? (
@@ -389,14 +346,14 @@ function Content() {
                   <DialogButton
                     onClick={() => handleKickDevice(device.mac)}
                     style={{
-                      width: "32px",  // Force a square shape
+                      width: "32px",
                       height: "32px",
-                      padding: 0,  // Remove extra padding causing width issues
-                      marginRight: "16px", // Slightly shift it left
+                      padding: 0,
+                      marginRight: "16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      minWidth: "32px", // Ensures it stays square
+                      minWidth: "32px",
                       maxWidth: "32px",
                     }}
                   >
@@ -414,7 +371,6 @@ function Content() {
       </PanelSection>
       )}
   
-      {/* SSID/Passphrase and Settings Section */}
       <PanelSection title="Network Settings">
         <PanelSectionRow>
           <TextField label="SSID" value={ssid} disabled={true} />
@@ -468,8 +424,11 @@ function Content() {
 export default definePlugin(() => {
   console.log("Hotspot plugin initializing");
 
-  const onMuonDeviceEvent = (payload: any) => {
-    const msg = typeof payload === "string" ? (() => { try { return JSON.parse(payload); } catch { return {}; } })() : payload;
+  const onMuonDeviceEvent = async (payload: any) => {
+    const msg = typeof payload === "string"
+      ? (() => { try { return JSON.parse(payload); } catch { return {}; } })()
+      : payload;
+
     if (msg?.type === "connected") {
       toaster.toast({
         title: "Device Connected",
@@ -484,8 +443,10 @@ export default definePlugin(() => {
       });
     }
   };
-
-  addEventListener("muon_device_event", onMuonDeviceEvent);
+  if (!_muonListenerRegistered) {
+    addEventListener("muon_device_event", onMuonDeviceEvent);
+    _muonListenerRegistered = true;
+  }
 
   const suspendRequestRegistration =
     window.SteamClient.System.RegisterForOnSuspendRequest?.bind(window.SteamClient.System) ??
@@ -511,7 +472,10 @@ export default definePlugin(() => {
     onDismount() {
       unregisterSuspend.unregister();
       unregisterResume.unregister();
-      removeEventListener("muon_device_event", onMuonDeviceEvent);
+      if (_muonListenerRegistered) {
+        removeEventListener("muon_device_event", onMuonDeviceEvent);
+        _muonListenerRegistered = false;
+      }
     }
   };
 });
