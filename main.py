@@ -27,6 +27,7 @@ class Plugin:
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
         self.settings.read()
         await self.load_settings()
+        asyncio.create_task(self.monitor_connected_devices())
 
     async def _unload(self):
         decky.logger.info("Stopping Hotspot Plugin")
@@ -273,6 +274,9 @@ class Plugin:
     async def check_dependencies(self, temporary_sysext=True):
         # Ensure required dependencies are installed.
         try:
+            if self.hotspot_active:
+                temporary_sysext = False
+
             if temporary_sysext:
                 await self.activate_muon_sysext()
 
@@ -287,7 +291,7 @@ class Plugin:
         finally:
             # Deactivate Muon sysext after checking dependencies
             try:
-                if temporary_sysext:
+                if temporary_sysext and not self.hostpot_active:
                     await self.deactivate_muon_sysext()
                     decky.logger.info("Muon sysext deactivated after dependency check.")
             except Exception as e:
@@ -439,6 +443,46 @@ class Plugin:
 
 
     # CLIENT LIST METHODS
+
+    async def monitor_connected_devices(self):
+        known = set()
+        while True:
+            try:
+                if await self.is_hotspot_active():
+                    raw = await self.get_connected_devices()
+                    try:
+                        devices = json.loads(raw) if isinstance(raw, str) else raw
+                    except Exception:
+                        devices = []
+
+                    if not isinstance(devices, list):
+                        await asyncio.sleep(2)
+                        continue
+
+                    macs = {d.get("mac") for d in devices if d.get("mac")}
+
+                    for d in devices:
+                        mac = d.get("mac")
+                        if mac and mac not in known:
+                            await decky.emit("muon_device_event", {
+                                "type": "connected",
+                                "hostname": d.get("hostname"),
+                                "ip": d.get("ip"),
+                                "mac": mac,
+                            })
+                            known.add(mac)
+
+                    for mac in list(known):
+                        if mac not in macs:
+                            await decky.emit("muon_device_event", {
+                                "type": "disconnected",
+                                "mac": mac,
+                            })  
+                            known.remove(mac)
+            except Exception as e:
+                decky.logger.error(f"[Error] {e}")
+            await asyncio.sleep(2)
+
     async def get_connected_devices(self):
         # Combines output from hostapd_cli and dnsmasq to return connected devices info
         # in JSON format.
