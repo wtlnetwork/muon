@@ -21,6 +21,8 @@ class Plugin:
         self.ssid = None
         self.passphrase = None
         self.current_directory = os.path.dirname(__file__)
+        if self.debug:
+            decky.logger.debug(f"Muon initialised. Settings directory: {self.settingsDir}, Assets directory: {self.assetsDir}")
 
     async def _main(self):
         decky.logger.info("Hotspot Plugin Loaded")
@@ -455,7 +457,11 @@ class Plugin:
                     except Exception:
                         devices = []
 
+                    if not devices:
+                        continue
+
                     if not isinstance(devices, list):
+                        decky.logger.warning(f"[Muon] Invalid device list: {devices}")
                         await asyncio.sleep(2)
                         continue
 

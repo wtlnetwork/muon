@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@decky/api':
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^1.1.3
+        version: 1.1.3
       decky-frontend-lib:
         specifier: ^3.25.0
         version: 3.25.0
@@ -22,11 +22,11 @@ importers:
         version: 2.8.1
     devDependencies:
       '@decky/rollup':
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^1.0.2
+        version: 1.0.2
       '@decky/ui':
-        specifier: ^4.7.2
-        version: 4.9.1
+        specifier: ^4.11.0
+        version: 4.11.0
       '@types/react':
         specifier: 18.3.3
         version: 18.3.3
@@ -45,14 +45,14 @@ importers:
 
 packages:
 
-  '@decky/api@1.1.2':
-    resolution: {integrity: sha512-lTMqRpHOrGTCyH2c1jJvkmWhOq2dcnX5/ioHbfCVmyQOBik1OM1BnzF1uROsnNDC5GkRvl3J/ATqYp6vhYpRqw==}
+  '@decky/api@1.1.3':
+    resolution: {integrity: sha512-XsPCZxfxk5I1UtylIUN3qaWQI31siQbKfbLIskkI5innEatY1m4NQqBv/6hwPaO9mKMbdqYpnh5PSJDeMEOOBA==}
 
-  '@decky/rollup@1.0.1':
-    resolution: {integrity: sha512-dx1VJwD7ul14PA/aZvOwAfY/GujHzqZJ+MFb4OIUVi63/z4KWMSuZrK6QWo0S4LrNW3RzB3ua6LT0WcJaNY9gw==}
+  '@decky/rollup@1.0.2':
+    resolution: {integrity: sha512-ixuHH3msw156ACbgWZi4hgccdzDBIuqYGOVja8sLX4lHFgaWUKji1vomDi7Dk1CamgjmKt+Dqf75Pezv2FB6Bw==}
 
-  '@decky/ui@4.9.1':
-    resolution: {integrity: sha512-vVDi5usqBBvEw+ij87GciuaCnysjjTfkNFjDaMM1EzDvNpquKXWHNxNbbsRBZzv4qcjXPxNHU9zZ6VaKpVPVRA==}
+  '@decky/ui@4.11.0':
+    resolution: {integrity: sha512-l9PstFC+S8FE8M2kIM78L8cYW4vzJ/ZD30II0huarHLcCsKM4Q+rbmEnbWjlJ1/KLmGXVRXBdAbyD4X/FzfxnQ==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -953,9 +953,9 @@ packages:
 
 snapshots:
 
-  '@decky/api@1.1.2': {}
+  '@decky/api@1.1.3': {}
 
-  '@decky/rollup@1.0.1':
+  '@decky/rollup@1.0.2':
     dependencies:
       '@rollup/plugin-commonjs': 26.0.3(rollup@4.34.6)
       '@rollup/plugin-json': 6.1.0(rollup@4.34.6)
@@ -970,7 +970,7 @@ snapshots:
       tslib: 2.8.1
       typescript: 5.7.3
 
-  '@decky/ui@4.9.1': {}
+  '@decky/ui@4.11.0': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:

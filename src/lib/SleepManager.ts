@@ -1,13 +1,18 @@
-import { findModuleChild } from "decky-frontend-lib";
+import { findModuleExport } from "@decky/ui";
 
 interface SleepManager {
-  RegisterForNotifyResumeFromSuspend: (cb: () => void) => { unregister: () => void };
-  RegisterForNotifyRequestSuspend: (cb: () => void) => { unregister: () => void };
+  RegisterForNotifyResumeFromSuspend: (
+    cb: () => void
+  ) => { unregister: () => void };
+  RegisterForNotifyRequestSuspend: (
+    cb: () => void
+  ) => { unregister: () => void };
 }
 
-export const sleepManager = findModuleChild((mod) => {
-  if (typeof mod !== "object") return undefined;
-  for (const prop in mod) {
-    if (mod[prop]?.RegisterForNotifyResumeFromSuspend) return mod[prop];
-  }
-}) as SleepManager | undefined;
+export const sleepManager = findModuleExport(
+  (exp) =>
+    exp &&
+    typeof exp === "object" &&
+    typeof exp.RegisterForNotifyResumeFromSuspend === "function" &&
+    typeof exp.RegisterForNotifyRequestSuspend === "function"
+) as SleepManager | undefined;
