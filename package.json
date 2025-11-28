@@ -1,6 +1,6 @@
 {
   "name": "muon",
-  "version": "0.2",
+  "version": "0.2.1",
   "description": "Ad-hoc WiFi networking plugin for Decky.",
   "type": "module",
   "scripts": {
