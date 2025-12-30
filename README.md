@@ -1,6 +1,8 @@
-# **Muon - Ad-Hoc connection for the Steam Deck**
+# **Muon - Hotspot connection for the Steam Deck**
 
 A decky-loader plugin that creates a WiFi access point for another Devices to connect.
+
+**Download the Muon plugin from the decky-loader storefront!**
 
 <div align="left" valign="middle">
  <picture>
@@ -20,14 +22,12 @@ A decky-loader plugin that creates a WiFi access point for another Devices to co
 </a>
 
 **List of Features:**
-* 1 Steam Deck needs to download the plugin for hosting; guests are not required to do so.
-* Random host password generation per device restart (option to keep it static)
+* Host Steam Deck has to download the plugin; guests are not required to do so.
+* Random host password generation per device restart with option to keep it static
+* UI showcasing IP addresses for host & guest devices with signal strength
 * Toaster notifications for joined & disconnected devices
-* Option to change hostname for the Steam Deck
-* Option for credentials being remembered for quick access
-
-**[BE UP-TO-DATE WITH THE NEWEST RELEASES!](https://github.com/wtlnetwork/muon/releases)**
-
+* Option to change IP and DHCP for Host Steam Deck
+* Ability to ban untrusted device IPs
 ## Preview:
 __Here are a sample of games verified for Muon!__
 
@@ -66,9 +66,11 @@ Official Muon Steam Group:
 
 ## Planned Updates:
 
-* decky-loader plugin store release (0.1.6) ✔
-* QoL & Bug Fixes based of from feedback (0.1.7+)
-* RemotePlayWhatever & LAN over USB-C Cable Integration (0.4.0)?
+* decky-loader plugin pre-store release (0.1.6) ✔
+* QoL & Bug Fixes based of from feedback (0.1.7+) ✔
+* Decky-loader Store Release (0.2.1) ✔
+* Toaster Notification reconnection fix, UI polish, Steam group button and final code clean up (0.2.5)
+* Stable and Final Build, New Games .gifs for Preview - replace all (1.0)
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
@@ -77,10 +79,15 @@ Official Muon Steam Group:
     <td>
       <strong>WARNING: The following actions are strongly discouraged. We assume no liability for any consequences resulting from these actions:</strong>
       <ul>
-        <li>Connecting more than two Steam Decks via Ad-Hoc (untested, subject to change based on research and feedback)</li>
-        <li>Using Muon during flights or air travel</li>
-        <li>Sharing your passphrase with strangers</li>
-        <li>Running Muon with hardware-intensive games (risk of overloading the host Steam Deck)</li>
+        <li>Sharing your passphrase with complete strangers</li>
+        <li>Weak Password with Remember Credentials Enabled</li>
+      </ul>
+    </td>
+     <ul>
+      <td>
+      <strong>CAUTION: The following actions are not recommended but you can proceed:</strong>
+       <ul>
+        <li>Using Muon on an Airplane Flight (<b>Please follow flight attendant instructions if Muon Wi-Fi is causing pilot communication interfearances</b>)</li>
       </ul>
     </td>
   </tr>
