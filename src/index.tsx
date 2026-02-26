@@ -281,7 +281,7 @@ function Content() {
 
               {hotspotStatus === "running" && (
                 <div style={{ fontSize: "13px", color: "#aaa" }}>
-                  <b>Host IP</b>: {ipAddress}
+                  <b>Host_IP</b>: {ipAddress}
                 </div>
               )}
             </div>
@@ -420,6 +420,17 @@ function Content() {
   );
 };
 
+  <PanelSectionRow>
+  <ButtonItem
+     title="Muon Compatibility">
+      <PanelSocialButton
+        url="https://wtlnetwork.github.io/muon-docs/"
+      ></PanelSocialButton>
+  </ButtonItem>
+      </PanelSectionRow>
+    </>
+  );
+};    
 
 export default definePlugin(() => {
   console.log("Hotspot plugin initializing");
