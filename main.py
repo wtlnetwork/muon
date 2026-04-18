@@ -227,7 +227,7 @@ class Plugin:
             decky.logger.error(f"Error checking hotspot status: {e}")
             return False
 
-    async def start_wifi_ap(self, ssid, passphrase):
+    async def start_wifi_ap(self, ssid, passphrase, channel="36", hw_mode="a", country_code="US"):
         decky.logger.info("Starting Hotspot")
         script_path = os.path.join(self.assetsDir, "start_hotspot.sh")
 
@@ -237,7 +237,10 @@ class Plugin:
             self.wifi_interface,
             self.ip_address,
             ssid,
-            passphrase
+            passphrase,
+            channel,
+            hw_mode,
+            country_code
         ])
 
         if "Hotspot started successfully" in result:

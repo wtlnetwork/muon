@@ -5,6 +5,9 @@ WIFI_INTERFACE=$1
 STATIC_IP=$2
 SSID=$3
 PASSPHRASE=$4
+WIFI_CHANNEL=$5
+HW_MODE=$6
+COUNTRY_CODE=$7
 HOSTAPD_CONF="/tmp/hostapd.conf"
 CTRL_INTERFACE_DIR="/var/run/hostapd"
 
@@ -13,6 +16,9 @@ echo "WiFi Interface: $WIFI_INTERFACE"
 echo "Static IP: $STATIC_IP"
 echo "SSID: $SSID"
 echo "Passphrase: $PASSPHRASE"
+echo "WiFi Channel: $WIFI_CHANNEL"
+echo "Hardware Mode: $HW_MODE"
+echo "Country Code: $COUNTRY_CODE"
 
 AP_IF="muon0"
 
@@ -100,12 +106,19 @@ cat <<EOT | sudo tee $HOSTAPD_CONF > /dev/null
 interface=$AP_IF
 driver=nl80211
 ssid=$SSID
-hw_mode=g
-channel=6
+hw_mode=$HW_MODE
+channel=$WIFI_CHANNEL
 wpa=2
 wpa_passphrase=$PASSPHRASE
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
+
+ieee80211d=1
+country_code=$COUNTRY_CODE
+ieee80211ac=1
+ieee80211n=1
+wmm_enabled=1
+ht_capab=[HT40+][SHORT-GI-40][SHORT-GI-20]
 
 # Control interface for hostapd_cli communication
 ctrl_interface=$CTRL_INTERFACE_DIR

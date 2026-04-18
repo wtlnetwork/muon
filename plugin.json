@@ -5,7 +5,7 @@
   "api_version": 1,
   "publish": {
     "tags": ["adhoc", "wifi", "p2p", "multiplayer", "root"],
-    "description": "Ad-hoc WiFi networking plugin for Decky.",
+    "description": "WiFi hotspot plugin for Decky.",
     "image": "https://raw.githubusercontent.com/wtlnetwork/muon/refs/heads/main/assets/logo.png"
   }
 }
