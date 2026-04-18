@@ -97,11 +97,17 @@ echo "Checking if hostapd.deny file exists..."
 # Create an empty deny file if it doesn't exist
 mkdir -p /etc/hostapd && touch /etc/hostapd/hostapd.deny
 
+# Applying regulatory settings for WiFi adapter
+echo "Applying regulatory domain $COUNTRY_CODE to kernel..."
+sudo iw reg set "$COUNTRY_CODE"
+
 # Step 4: Start Hotspot
 echo "Starting hotspot with SSID: $SSID"
 
 # Generate hostapd configuration
 echo "Generating hostapd configuration..."
+
+# Base configuration for all bands
 cat <<EOT | sudo tee $HOSTAPD_CONF > /dev/null
 interface=$AP_IF
 driver=nl80211
@@ -112,15 +118,22 @@ wpa=2
 wpa_passphrase=$PASSPHRASE
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
-
 ieee80211d=1
 country_code=$COUNTRY_CODE
-ieee80211ac=1
 ieee80211n=1
 wmm_enabled=1
-ht_capab=[HT40+][SHORT-GI-40][SHORT-GI-20]
+EOT
 
-# Control interface for hostapd_cli communication
+# Append 5 GHz-specific capabilities
+if [ "$HW_MODE" = "a" ]; then
+cat <<EOT | sudo tee -a $HOSTAPD_CONF > /dev/null
+ieee80211ac=1
+ht_capab=[HT40+]
+EOT
+fi
+
+# Append control interface settings
+cat <<EOT | sudo tee -a $HOSTAPD_CONF > /dev/null
 ctrl_interface=$CTRL_INTERFACE_DIR
 ctrl_interface_group=0
 deny_mac_file=/etc/hostapd/hostapd.deny
