@@ -4,6 +4,10 @@ import asyncio
 import re
 import decky
 import subprocess
+import aiohttp
+import asyncio
+import ssl
+import certifi
 from pathlib import Path
 from settings import SettingsManager
 
@@ -23,6 +27,9 @@ class Plugin:
         self.channel = "36"
         self.hw_mode = "a"
         self.country_code = "US"
+        self.fetch_latest_compat()
+        self.compatibility_url = "https://raw.githubusercontent.com/wtlnetwork/muon-docs/refs/heads/main/static/gameinfo/supported_games.json"
+        self.compatibility_save_path = f"{self.assetsDir}/compatibility.json"
         self.current_directory = os.path.dirname(__file__)
         if self.debug:
             decky.logger.debug(f"Muon initialised. Settings directory: {self.settingsDir}, Assets directory: {self.assetsDir}")
@@ -32,6 +39,7 @@ class Plugin:
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
         self.settings.read()
         await self.load_settings()
+        self.fetch_latest_compat()
         asyncio.create_task(self.monitor_connected_devices())
 
     async def _unload(self):
@@ -79,6 +87,78 @@ class Plugin:
             decky.logger.info(f"sysext refresh output: {out}")
         except Exception as e:
             decky.logger.error(f"sysext refresh after deactivation failed: {e}")
+
+    # COMPATIBILITY LIST METHODS
+    async def fetch_latest_compat(self) -> dict:
+        
+        timeout = aiohttp.ClientTimeout(total=5)
+        decky.logger.info(f"Fetching from {self.compatibility_url}, saving to {self.compatibility_save_path}")
+
+        try:
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(self.compatibility_url, ssl=ssl_context) as response:
+                    decky.logger.info(f"HTTP response: {response.status}")
+                    response.raise_for_status()
+                    raw_text = await response.text()
+                    decky.logger.info(f"Received {len(raw_text)} bytes")
+
+                    data = json.loads(raw_text)
+                    decky.logger.info(f"Parsed JSON successfully ({len(data)} entries)")
+
+                with open(self.compatibility_save_path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=4)
+                decky.logger.info(f"Saved to {self.compatibility_save_path}")
+
+                return {
+                    "success": True,
+                    "errortype": None
+                }
+
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            decky.logger.error(f"Connectivity error: {e}")
+            return {
+                "success": False,
+                "errortype": "connectivity"
+            }
+        except json.JSONDecodeError as e:
+            decky.logger.error(f"JSON decode error: {e}")
+            return {
+                "success": False,
+                "errortype": "invalidjson"
+            }
+        except Exception as e:
+            decky.logger.error(f"Unexpected error: {e}")
+            return {
+                "success": False,
+                "errortype": "unknown"
+            }
+
+    async def get_compat_list(self) -> dict:
+        decky.logger.info(f"Reading saved compatibility list.")
+        try:
+            with open(self.compatibility_save_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                decky.logger.info(f"Loaded {len(data)} entries.")
+                return {
+                    "success": True,
+                    "data": data
+                }
+        except FileNotFoundError:
+            decky.logger.warning(f"File not found: {self.compatibility_save_path}")
+            return {
+                "success": False,
+                "errortype": "filenotfound",
+                "data": []
+            }
+
+        except json.JSONDecodeError as e:
+            decky.logger.error(f"JSON decode error: {e}")
+            return {
+                "success": False,
+                "errortype": "invalidjson",
+                "data": []
+            }
 
 
     # SETTINGS METHODS

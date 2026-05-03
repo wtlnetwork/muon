@@ -17,6 +17,7 @@ import {
 } from "@decky/api";
 import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
+import { showCompatibilityListModal } from "./compatibility_list";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
 import { BootIcon } from "./banned_devices";
@@ -430,6 +431,11 @@ function Content() {
             }
           >
             <FaCog /> Edit WiFi Settings
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="inline" onClick={() => showCompatibilityListModal()}>
+            Compatibility List
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
