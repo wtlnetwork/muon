@@ -1,6 +1,5 @@
 import json
 import os
-import asyncio
 import re
 import decky
 import subprocess
@@ -31,6 +30,10 @@ class Plugin:
         self.compatibility_url = "https://raw.githubusercontent.com/wtlnetwork/muon-docs/refs/heads/main/static/gameinfo/supported_games.json"
         self.compatibility_save_path = f"{self.assetsDir}/compatibility.json"
         self.current_directory = os.path.dirname(__file__)
+        # Regex which matches valid MAC addresses.
+        self.VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+        # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
+        self.EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
         if self.debug:
             decky.logger.debug(f"Muon initialised. Settings directory: {self.settingsDir}, Assets directory: {self.assetsDir}")
 
@@ -280,11 +283,11 @@ class Plugin:
                 
                 await self.activate_muon_sysext()
                 await self.check_dependencies(temporary_sysext=False)
-                await self.configure_firewalld()
                 await self.ensure_wlan0_up()
                 await self.capture_network_config()
                 await self.capture_service_states()
                 await self.start_wifi_ap(ssid, passphrase, channel, hw_mode, country_code)
+                await self.configure_firewalld()
                 await self.start_dhcp_server()
 
                 decky.logger.info("Hotspot activated.")
@@ -315,9 +318,14 @@ class Plugin:
 
             decky.logger.info("Restoring network configuration")
 
-            result = await self.run_command(
-                f"bash {script_path} {self.wifi_interface} {self.original_ip or ''} {self.original_gateway or ''} {dns_servers}"
-            )
+            result = await self.run_command([
+                "bash", 
+                script_path, 
+                self.wifi_interface, 
+                self.original_ip or "", 
+                self.original_gateway or "", 
+                dns_servers
+            ])
 
             if "Network configuration restored successfully" in result:
                 self.hotspot_active = False
@@ -343,16 +351,52 @@ class Plugin:
     async def start_wifi_ap(self, ssid, passphrase, channel, hw_mode, country_code):
         decky.logger.info("Starting Hotspot")
         script_path = os.path.join(self.assetsDir, "start_hotspot.sh")
+        hostapd_conf_path = "/tmp/hostapd.conf"
+        ctrl_interface_dir = "/var/run/hostapd"
+
+        config_lines = [
+            f"interface={self.ap_interface}",
+            "driver=nl80211",
+            f"ssid={ssid}",
+            f"hw_mode={hw_mode}",
+            f"channel={channel}",
+            "wpa=2",
+            f"wpa_passphrase={passphrase}",
+            "wpa_key_mgmt=WPA-PSK",
+            "rsn_pairwise=CCMP",
+            "ieee80211d=1",
+            f"country_code={country_code}",
+            "ieee80211n=1",
+            "wmm_enabled=1"
+        ]
+
+        # Append 5 GHz-specific capabilities if applicable
+        if hw_mode == "a":
+            config_lines.extend([
+                "ieee80211ac=1",
+                "ht_capab=[HT40+]"
+            ])
+
+        # Append control interface settings
+        config_lines.extend([
+            f"ctrl_interface={ctrl_interface_dir}",
+            "ctrl_interface_group=0",
+            "deny_mac_file=/etc/hostapd/hostapd.deny"
+        ])
+
+        config_content = "\n".join(config_lines) + "\n"
+
+        def write_config():
+            with open(hostapd_conf_path, "w") as f:
+                f.write(config_content)
+                
+        await asyncio.to_thread(write_config)
 
         result = await self.run_command([
             "bash",
             script_path,
             self.wifi_interface,
             self.ip_address,
-            ssid,
-            passphrase,
-            channel,
-            hw_mode,
             country_code
         ])
 
@@ -677,7 +721,13 @@ class Plugin:
         """Kick and block a MAC address from the hotspot."""
         try:
             # Deauthenticate the device (kick it off the hotspot)
-            result = await self.run_command(f"hostapd_cli -i {self.ap_interface} deauthenticate {mac_address}")
+            result = await self.run_command([
+                "hostapd_cli", 
+                "-i", 
+                self.ap_interface, 
+                "deauthenticate", 
+                mac_address
+            ])
 
             if not result or "OK" not in result:
                 decky.logger.error(f"Failed to kick MAC address: {mac_address}. Response: {result}")
@@ -687,13 +737,22 @@ class Plugin:
 
             # Add MAC to deny list in hostapd.deny
             hostapd_conf = "/etc/hostapd/hostapd.deny"
-            with open(hostapd_conf, "a") as f:
-                f.write(f"\n{mac_address}\n")
+            def append_ban():
+                with open(hostapd_conf, "a") as f:
+                    f.write(f"\n{mac_address}\n")
+            await asyncio.to_thread(append_ban)
 
             decky.logger.info(f"Added {mac_address} to deny list in {hostapd_conf}")
 
             # Reload hostapd configuration
-            reload_result = await self.run_command(f"hostapd_cli -p /var/run/hostapd -i {self.ap_interface} reload")
+            reload_result = await self.run_command([
+                "hostapd_cli", 
+                "-p", 
+                "/var/run/hostapd", 
+                "-i", 
+                self.ap_interface, 
+                "reload"
+            ])
 
             if reload_result.strip() == "":  # Success if output is empty
                 decky.logger.info("Reloaded hostapd configuration successfully.")
@@ -707,27 +766,24 @@ class Plugin:
             return False
         
     async def retrieve_ban_list(self) -> list:
-        # Regex which matches valid MAC addresses.
-        VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
-        # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
-        EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
         """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
         deny_file = "/etc/hostapd/hostapd.deny"
 
-        try:
-            if not os.path.exists(deny_file):
-                decky.logger.warning("Ban list file does not exist. Returning empty list.")
-                return []
+        if not os.path.exists(deny_file):
+            decky.logger.warning("Ban list file does not exist. Returning empty list.")
+            return []
 
+        def read_bans():
             with open(deny_file, "r") as f:
-                mac_addresses = [
+                return [
                     line.strip()
                     for line in f
-                    if VALID_MAC_REGEX.match(line.strip()) and line.strip() not in EXCLUDED_MACS
+                    if self.valid_mac_regex.match(line.strip()) and line.strip() not in self.excluded_macs
                 ]
 
+        try:
+            mac_addresses = await asyncio.to_thread(read_bans)
             decky.logger.info(f"Retrieved {len(mac_addresses)} valid banned MAC addresses.")
-            # Return all valid MAC addresses, excluding the default ones.
             return mac_addresses
 
         except Exception as e:

@@ -4,6 +4,7 @@ import { ButtonItem, PanelSectionRow } from "@decky/ui";
 import { FaTimes, FaCheck } from "react-icons/fa";
 import { callable, toaster } from "@decky/api";
 
+// Define valid channel and hardware modes.
 const VALID_CHANNELS = ["1", "6", "11", "36", "40", "44", "48"];
 const VALID_HW_MODES = ["a", "b", "g"];
 const DEFAULT_CHANNEL = "36";

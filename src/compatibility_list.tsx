@@ -18,10 +18,10 @@ export const showCompatibilityListModal = () => {
   showModal(<CompatibilityList />, undefined, { strTitle: "Compatibility List" });
 };
 
-const STATE_STYLE: Record<string, { color: string; label: string }> = {
-  supported:     { color: "#4caf50", label: "✔" },
-  unsupported:   { color: "#f44336", label: "✘" },
-  informational: { color: "#ffc107", label: "ℹ" },
+const STATE_STYLE: Record<string, { label: string }> = {
+  supported:     { label: "✅" },
+  unsupported:   { label: "❌" },
+  informational: { label: "ℹ️" },
 };
 
 export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) => {
@@ -107,7 +107,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
                             <div style={{ fontSize: "11px", color: "#aaa" }}>{game.short_description}</div>
                           )}
                         </td>
-                        <td style={{ textAlign: "center", padding: "6px 8px", color: style.color, fontWeight: "bold", fontSize: "16px" }}>
+                        <td style={{ textAlign: "center", padding: "6px 8px", fontWeight: "bold", fontSize: "16px" }}>
                           {style.label}
                         </td>
                       </tr>
