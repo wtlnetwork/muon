@@ -62,17 +62,30 @@ class Plugin:
             f"bash {script_path}"
         )
 
+    # GROUNDWORK FOR SUPPORTING BAZZITE
+    async def get_os_type(self) -> str:
+        try:
+            with open("/etc/os-release", "r") as f:
+                os_release = f.read().lower()
+                if "bazzite" in os_release or "fedora" in os_release:
+                    return "bazzite"
+                return "steamos"
+        except Exception as e:
+            decky.logger.error(f"Failed to read os-release: {e}")
+            # Assume SteamOS unless otherwise indicated.
+            return "steamos"
+
     # SYSEXT METHODS
     async def activate_muon_sysext(self):
         muon_raw = os.path.join(self.assetsDir, "muon.raw")
         link_path = "/var/lib/extensions/muon.raw"
+        
         if not os.path.exists(muon_raw):
             decky.logger.warning("muon.raw not found - attempting to build via install script.")
             await self.run_command(f"bash {os.path.join(self.assetsDir, 'install_dependencies.sh')}")
 
-        # Link into /var/lib/extensions so refresh will include it
-        await self.run_command(f"sudo ln -sf '{muon_raw}' '{link_path}'")
-        # Refresh sysext to include Muon
+        await self.run_command(f"sudo cp -f '{muon_raw}' '{link_path}'")
+        
         try:
             out = await self.run_command("systemd-sysext refresh")
             decky.logger.info(f"sysext refresh output: {out}")
@@ -453,7 +466,7 @@ class Plugin:
         finally:
             # Deactivate Muon sysext after checking dependencies
             try:
-                if temporary_sysext and not self.hostpot_active:
+                if temporary_sysext and not self.hotspot_active:
                     await self.deactivate_muon_sysext()
                     decky.logger.info("Muon sysext deactivated after dependency check.")
             except Exception as e:
@@ -656,7 +669,7 @@ class Plugin:
 
         # Hostapd and dnsmasq locations
         hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.ap_interface} all_sta"
-        dnsmasq_leases_file = "/var/lib/misc/dnsmasq.leases"
+        dnsmasq_leases_file = "/tmp/muon-dnsmasq.leases"
 
         # Dictionary to store device info
         devices = {}

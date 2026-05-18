@@ -28,28 +28,20 @@ echo "Using firewalld zone: $ACTIVE_ZONE"
 
 # Allow broadcast traffic and UDP for server discovery
 echo "Allowing broadcast traffic for server discovery..."
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept" --permanent
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept" --permanent
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 source address=${SUBNET}/24 protocol value=udp accept" --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept"
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept"
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 source address=${SUBNET}/24 protocol value=udp accept"
 
 # Allow DHCP service
 echo "Allowing DHCP traffic..."
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-service=dhcp --permanent
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-service=dhcp
+sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-masquerade
 
 # Check if the muon0 interface is in the active zone and add it if it isn't
 if ! sudo firewall-cmd --zone="$ACTIVE_ZONE" --list-interfaces | grep -qw muon0; then
     echo "Adding muon0 to zone $ACTIVE_ZONE..."
-    sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-interface=muon0 --permanent
+    sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-interface=muon0
 fi
 
-# Reload firewalld to apply changes
-echo "Reloading firewalld to apply changes..."
-FIREWALLD_RELOAD=$(sudo firewall-cmd --reload)
-
-if [ "$FIREWALLD_RELOAD" == "success" ]; then
-    echo "Firewalld configuration updated successfully."
-    exit 0
-else
-    echo "Failed to reload firewalld."
-    exit 1
-fi
+echo "Firewalld configured successfully for the current session."
+exit 0

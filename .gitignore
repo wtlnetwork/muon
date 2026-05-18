@@ -59,3 +59,6 @@ cli/decky
 release/
 help/
 reference/
+
+package_bz.json
+build.ps1

@@ -23,6 +23,7 @@ port=0  # Disable DNS serving
 log-dhcp
 log-facility=$DNSMASQ_LOG  # Save logs here
 dhcp-broadcast
+dhcp-leasefile=/tmp/muon-dnsmasq.leases
 EOT
 echo "dnsmasq config generated successfully."
 
