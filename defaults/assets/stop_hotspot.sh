@@ -26,7 +26,7 @@ echo "Restarting NetworkManager and iwd..."
 sudo systemctl restart NetworkManager
 sudo systemctl restart iwd
 
-# Bring the main Wi-Fi interface back up
+# Step 5: Bring the main Wi-Fi interface back up
 sudo ip link set "$WIFI_INTERFACE" up
 
 echo "Network configuration restored successfully."

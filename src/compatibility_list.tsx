@@ -1,4 +1,5 @@
-import { showModal, SimpleModal, ModalPosition, DialogButton, ScrollPanelGroup } from "@decky/ui";
+import { showModal, SimpleModal, ModalPosition, DialogButton, ScrollPanelGroup, TextField } from "@decky/ui";
+import { FaSync } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { callable, toaster } from "@decky/api";
 
@@ -28,6 +29,10 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
   const [games, setGames] = useState<GameEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeStates, setActiveStates] = useState({ supported: true, unsupported: true, informational: true });
+  const toggleState = (s: "supported" | "unsupported" | "informational") =>
+    setActiveStates(prev => ({ ...prev, [s]: !prev[s] }));
 
   const loadList = async () => {
     setLoading(true);
@@ -46,6 +51,13 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
   };
 
   useEffect(() => { loadList(); }, []);
+
+  useEffect(() => { setExpandedIndex(null); }, [searchQuery, activeStates]);
+
+  const filteredGames = games.filter(g =>
+    activeStates[g.state] &&
+    g.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -67,17 +79,68 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
   return (
     <SimpleModal active={true}>
       <ModalPosition>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-          <DialogButton onClick={handleRefresh} disabled={loading}>
-            {loading ? "Loading..." : "Refresh"}
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+        {/* Search bar and refresh icon */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+          <div style={{ flex: 1 }}>
+            <TextField
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              label="Search games..."
+              bShowClearAction={true}
+            />
+          </div>
+          <DialogButton
+            onClick={handleRefresh}
+            disabled={loading}
+            style={{
+              minWidth: "36px",
+              width: "36px",
+              height: "36px",
+              padding: 0,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              opacity: loading ? 0.4 : 1,
+            }}
+          >
+            <FaSync style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
           </DialogButton>
-          <DialogButton onClick={closeModal}>Close</DialogButton>
         </div>
+
+        {/* State toggle buttons */}
+        <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+          {(["supported", "unsupported", "informational"] as const).map(s => (
+            <DialogButton
+              key={s}
+              onClick={() => toggleState(s)}
+              style={{
+                background: activeStates[s] ? "#1a3a1a" : "#222",
+                border: `1px solid ${activeStates[s] ? "#4a8a4a" : "#444"}`,
+                borderRadius: "6px",
+                padding: "4px 12px",
+                cursor: "pointer",
+                fontSize: "16px",
+                opacity: activeStates[s] ? 1 : 0.35,
+                transition: "all 0.15s",
+              }}
+            >
+              {STATE_STYLE[s].label}
+            </DialogButton>
+          ))}
+        </div>
+
+        {/* Game list */}
         <ScrollPanelGroup>
           {loading ? (
             <p style={{ padding: "8px" }}>Loading...</p>
           ) : games.length === 0 ? (
-            <p style={{ padding: "8px" }}>No data. Click Refresh to fetch the list.</p>
+            <p style={{ padding: "8px" }}>No data. Click the refresh button to fetch the list.</p>
+          ) : filteredGames.length === 0 ? (
+            <p style={{ padding: "8px" }}>No games match the current filter.</p>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
@@ -87,7 +150,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
                 </tr>
               </thead>
               <tbody>
-                {games.map((game, i) => {
+                {filteredGames.map((game, i) => {
                   const style = STATE_STYLE[game.state] ?? STATE_STYLE.informational;
                   const isExpanded = expandedIndex === i;
                   const hasNotes = !!game.notes;
@@ -125,6 +188,13 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
             </table>
           )}
         </ScrollPanelGroup>
+
+        {/* Close button at the bottom */}
+        <div style={{ marginTop: "8px", display: "flex", justifyContent: "flex-end" }}>
+          <DialogButton onClick={closeModal} style={{ width: "auto" }}>
+            Close
+          </DialogButton>
+        </div>
       </ModalPosition>
     </SimpleModal>
   );

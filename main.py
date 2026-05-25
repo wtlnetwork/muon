@@ -13,7 +13,7 @@ from settings import SettingsManager
 class Plugin:
     # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
-        self.debug = False
+        self.debug = True
         self.wifi_interface = "wlan0"
         self.ap_interface = "muon0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
