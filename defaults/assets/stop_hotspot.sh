@@ -1,9 +1,6 @@
 #!/bin/bash
 
 WIFI_INTERFACE=$1
-ORIGINAL_IP=$2
-ORIGINAL_GATEWAY=$3
-ORIGINAL_DNS=$4
 AP_IF="muon0"
 
 echo "Restoring network configuration for $WIFI_INTERFACE..."

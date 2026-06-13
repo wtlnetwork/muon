@@ -49,6 +49,9 @@ fi
 
 sudo ip link set "$AP_IF" up
 
+# Disable IPv6 on muon0
+echo 1 | sudo tee /proc/sys/net/ipv6/conf/"$AP_IF"/disable_ipv6 > /dev/null
+
 echo "Assigning IP $STATIC_IP/24 to $AP_IF..."
 sudo ip addr flush dev "$AP_IF" || true
 sudo ip addr add "$STATIC_IP/24" dev "$AP_IF"
@@ -75,7 +78,8 @@ sudo chmod 755 "$CTRL_INTERFACE_DIR"
 echo "Control interface directory is ready."
 
 echo "Checking if hostapd.deny file exists..."
-mkdir -p /etc/hostapd && touch /etc/hostapd/hostapd.deny
+sudo mkdir -p /etc/hostapd
+sudo touch /etc/hostapd/hostapd.deny
 
 echo "Applying regulatory domain $COUNTRY_CODE to kernel..."
 sudo iw reg set "$COUNTRY_CODE"
@@ -89,7 +93,7 @@ if [ $? -ne 0 ]; then
 fi
 echo "Hotspot started successfully."
 
-# Step 5: Verify Hostapd Control Interface
+# Step 5: Verify hostapd control interface
 echo "Verifying hostapd control interface..."
 
 if [ -e "$CTRL_INTERFACE_DIR/$AP_IF" ]; then

@@ -25,12 +25,16 @@ const STATE_STYLE: Record<string, { label: string }> = {
   informational: { label: "ℹ️" },
 };
 
+let _expandedIndex: number | null = null;
+let _searchQuery: string = "";
+let _activeStates = { supported: true, unsupported: true, informational: true };
+
 export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) => {
   const [games, setGames] = useState<GameEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeStates, setActiveStates] = useState({ supported: true, unsupported: true, informational: true });
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(_expandedIndex);
+  const [searchQuery, setSearchQuery] = useState<string>(_searchQuery);
+  const [activeStates, setActiveStates] = useState(_activeStates);
   const toggleState = (s: "supported" | "unsupported" | "informational") =>
     setActiveStates(prev => ({ ...prev, [s]: !prev[s] }));
 
@@ -53,6 +57,10 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
   useEffect(() => { loadList(); }, []);
 
   useEffect(() => { setExpandedIndex(null); }, [searchQuery, activeStates]);
+
+  useEffect(() => { _searchQuery = searchQuery; }, [searchQuery]);
+  useEffect(() => { _activeStates = activeStates; }, [activeStates]);
+  useEffect(() => { _expandedIndex = expandedIndex; }, [expandedIndex]);
 
   const filteredGames = games.filter(g =>
     activeStates[g.state] &&
@@ -81,7 +89,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
       <ModalPosition>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-        {/* Search bar and refresh icon */}
+        {}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
           <div style={{ flex: 1 }}>
             <TextField
@@ -111,7 +119,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
           </DialogButton>
         </div>
 
-        {/* State toggle buttons */}
+        {}
         <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
           {(["supported", "unsupported", "informational"] as const).map(s => (
             <DialogButton
@@ -133,7 +141,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
           ))}
         </div>
 
-        {/* Game list */}
+        {}
         <ScrollPanelGroup>
           {loading ? (
             <p style={{ padding: "8px" }}>Loading...</p>
@@ -189,7 +197,7 @@ export const CompatibilityList = ({ closeModal }: { closeModal?: () => void }) =
           )}
         </ScrollPanelGroup>
 
-        {/* Close button at the bottom */}
+        {}
         <div style={{ marginTop: "8px", display: "flex", justifyContent: "flex-end" }}>
           <DialogButton onClick={closeModal} style={{ width: "auto" }}>
             Close

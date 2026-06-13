@@ -26,7 +26,6 @@ class Plugin:
         self.channel = "36"
         self.hw_mode = "a"
         self.country_code = "US"
-        self.fetch_latest_compat()
         self.compatibility_url = "https://raw.githubusercontent.com/wtlnetwork/muon-docs/refs/heads/main/static/gameinfo/supported_games.json"
         self.compatibility_save_path = f"{self.assetsDir}/compatibility.json"
         self.current_directory = os.path.dirname(__file__)
@@ -42,7 +41,7 @@ class Plugin:
         self.settings = SettingsManager(name="hotspot_settings", settings_directory=self.settingsDir)
         self.settings.read()
         await self.load_settings()
-        self.fetch_latest_compat()
+        asyncio.create_task(self.fetch_latest_compat())
         asyncio.create_task(self.monitor_connected_devices())
 
     async def _unload(self):
@@ -79,13 +78,13 @@ class Plugin:
     async def activate_muon_sysext(self):
         muon_raw = os.path.join(self.assetsDir, "muon.raw")
         link_path = "/var/lib/extensions/muon.raw"
-        
+
         if not os.path.exists(muon_raw):
             decky.logger.warning("muon.raw not found - attempting to build via install script.")
             await self.run_command(f"bash {os.path.join(self.assetsDir, 'install_dependencies.sh')}")
 
         await self.run_command(f"sudo cp -f '{muon_raw}' '{link_path}'")
-        
+
         try:
             out = await self.run_command("systemd-sysext refresh")
             decky.logger.info(f"sysext refresh output: {out}")
@@ -106,7 +105,7 @@ class Plugin:
 
     # COMPATIBILITY LIST METHODS
     async def fetch_latest_compat(self) -> dict:
-        
+
         timeout = aiohttp.ClientTimeout(total=5)
         decky.logger.info(f"Fetching from {self.compatibility_url}, saving to {self.compatibility_save_path}")
 
@@ -225,7 +224,7 @@ class Plugin:
             "hw_mode": self.hw_mode,
             "country_code": self.country_code
         }
-    
+
     async def settings_read(self):
         # Read settings from storage.
         decky.logger.info("Reading hotspot settings...")
@@ -263,7 +262,7 @@ class Plugin:
         decky.logger.info(f"Updated credentials: SSID={self.ssid}, Passphrase={self.passphrase}, AlwaysUse={self.always_use_stored_credentials}")
 
         return {"ssid": self.ssid, "passphrase": self.passphrase, "always_use_stored_credentials": self.always_use_stored_credentials}
-    
+
     async def update_advanced_settings(self, new_channel, new_hw_mode, new_country_code):
         self.channel = new_channel
         self.hw_mode = new_hw_mode
@@ -293,7 +292,7 @@ class Plugin:
                 if not ssid or not passphrase:
                     decky.logger.error("SSID or Passphrase is missing! Aborting.")
                     return False
-                
+
                 await self.activate_muon_sysext()
                 await self.check_dependencies(temporary_sysext=False)
                 await self.ensure_wlan0_up()
@@ -314,7 +313,7 @@ class Plugin:
                     await self.stop_hotspot()
                     self.hotspot_active = False
                     return False
-                
+
                 self.hotspot_active = True
                 decky.logger.info("Hotspot started successfully.")
                 return True
@@ -327,17 +326,13 @@ class Plugin:
         decky.logger.info("Stopping Hotspot")
         try:
             script_path = os.path.join(self.assetsDir, "stop_hotspot.sh")
-            dns_servers = ",".join(self.original_dns) if self.original_dns else ""
 
             decky.logger.info("Restoring network configuration")
 
             result = await self.run_command([
                 "bash", 
                 script_path, 
-                self.wifi_interface, 
-                self.original_ip or "", 
-                self.original_gateway or "", 
-                dns_servers
+                self.wifi_interface
             ])
 
             if "Network configuration restored successfully" in result:
@@ -380,7 +375,10 @@ class Plugin:
             "ieee80211d=1",
             f"country_code={country_code}",
             "ieee80211n=1",
-            "wmm_enabled=1"
+            "wmm_enabled=1",
+            "broadcast_deauth=0",
+            "no_probe_resp_if_max_sta=0",
+            "multicast_to_unicast=0"
         ]
 
         # Append 5 GHz-specific capabilities if applicable
@@ -402,7 +400,7 @@ class Plugin:
         def write_config():
             with open(hostapd_conf_path, "w") as f:
                 f.write(config_content)
-                
+
         await asyncio.to_thread(write_config)
 
         result = await self.run_command([
@@ -551,7 +549,7 @@ class Plugin:
             f"bash {script_path} {self.ip_address}"
         )
 
-        if "Firewalld configuration updated successfully" in result:
+        if "Firewalld configured successfully." in result:
             decky.logger.info("Firewalld configured successfully.")
         else:
             decky.logger.error("Failed to configure firewalld.")
@@ -603,7 +601,6 @@ class Plugin:
     async def get_ip_address(self) -> str:
         return self.ip_address
 
-    
 
     # SUSPENSION METHODS
     async def suspend_ap(self):
@@ -665,7 +662,7 @@ class Plugin:
     async def get_connected_devices(self):
         # Combines output from hostapd_cli and dnsmasq to return connected devices info
         # in JSON format.
-        decky.logger.info("Fetching connected devices...")
+        decky.logger.debug("Fetching connected devices...")
 
         # Hostapd and dnsmasq locations
         hostapd_cmd = f"sudo hostapd_cli -p /var/run/hostapd -i {self.ap_interface} all_sta"
@@ -725,10 +722,10 @@ class Plugin:
 
         # Convert to JSON format
         connected_devices_json = json.dumps(list(devices.values()), indent=4)
-        decky.logger.info(f"Connected Devices: {connected_devices_json}")
+        decky.logger.debug(f"Connected Devices: {connected_devices_json}")
 
         return connected_devices_json
-    
+
     # CLIENT BLACKLISTING METHODS
     async def kick_mac(self, mac_address: str) -> bool:
         """Kick and block a MAC address from the hotspot."""
@@ -777,7 +774,7 @@ class Plugin:
         except Exception as e:
             decky.logger.error(f"Error while processing MAC address {mac_address}: {e}")
             return False
-        
+
     async def retrieve_ban_list(self) -> list:
         """Retrieves the list of banned MAC addresses from hostapd.deny, filtering out invalid and excluded ones."""
         deny_file = "/etc/hostapd/hostapd.deny"
