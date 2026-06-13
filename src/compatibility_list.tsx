@@ -1,6 +1,6 @@
 import { showModal, SimpleModal, ModalPosition, DialogButton, ScrollPanelGroup, TextField } from "@decky/ui";
 import { FaSync } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { callable, toaster } from "@decky/api";
 
 type GameEntry = {
@@ -19,10 +19,10 @@ export const showCompatibilityListModal = () => {
   showModal(<CompatibilityList />, undefined, { strTitle: "Compatibility List" });
 };
 
-const STATE_STYLE: Record<string, { label: string }> = {
+const STATE_STYLE: Record<string, { label: ReactNode }> = {
   supported:     { label: "✅" },
   unsupported:   { label: "❌" },
-  informational: { label: "ℹ️" },
+  informational: { label: <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#1a6bb5", color: "white", fontSize: "11px", fontWeight: "bold", fontStyle: "italic", lineHeight: 1 }}>i</span> },
 };
 
 let _expandedIndex: number | null = null;

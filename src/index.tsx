@@ -395,7 +395,7 @@ function Content() {
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem
-            layout="inline"
+            layout="below"
             onClick={() =>
               showWifiSettingsModal(
                 ssid,
@@ -434,7 +434,7 @@ function Content() {
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
-          <ButtonItem layout="inline" onClick={() => showCompatibilityListModal()}>
+          <ButtonItem layout="below" onClick={() => showCompatibilityListModal()}>
             Compatibility List
           </ButtonItem>
         </PanelSectionRow>
