@@ -1,6 +1,6 @@
-# **Muon - Hotspot connection for the Steam Deck**
+# **Muon - Play LAN Multiplayer games on the go!**
 
-A decky-loader plugin that creates a WiFi access point for another Devices to connect.
+Muon is a decky-loader plugin that creates a hotspot for other devices to connect locally.
 
 **Download the Muon plugin from the decky-loader storefront!**
 
@@ -22,14 +22,16 @@ A decky-loader plugin that creates a WiFi access point for another Devices to co
 </a>
 
 **List of Features:**
-* Host Steam Deck has to download the plugin; guests are not required to do so.
-* Random host password generation per device restart with option to keep it static
-* UI showcasing IP addresses for host & guest devices with signal strength
-* Toaster notifications for joined & disconnected devices
-* Option to change IP and DHCP for Host Steam Deck
-* Ability to ban untrusted device IPs
+* Steam Deck host must download the plugin; guests do not have to.
+* Random host password generation per device restart with option to keep it static.
+* UI showcasing IP addresses for host & guest devices with signal strength.
+* Toaster notifications for joined & disconnected devices.
+* Option to change IP and DHCP for Host Steam Deck.
+* Ability to ban untrusted device IPs.
+* Swap between 2.4GHz and 5GHz Signals for Distance or Speeds.
+* Integrated offline wiki page of compatible games, mod installs, and dedicated server guides.
 ## Preview:
-__Here are a sample of games verified for Muon!__
+__Here are a sample of games verified and supported for Muon!__
 
 <head>
     <meta charset="UTF-8">
@@ -37,40 +39,57 @@ __Here are a sample of games verified for Muon!__
 <body>
     <table>
         <tr>
-            <td>GARRY'S MOD</td>
-            <td>RAINBOW SIX: VEGAS 2</td>
-        </tr>
-        <tr>
-            <td><img src="https://i.imgur.com/xBv6Ue5.gif" alt="Placeholder GIF"></td>
-            <td><img src="https://i.imgur.com/WXI0BUw.gif" alt="Placeholder GIF"></td>
+            <td>QUAKE III ARENA</td>
+            <td>GoldenEye: Source</td>
         </tr>
         <tr>
             <td><img src="https://i.imgur.com/iqdeSSt.gif" alt="Placeholder GIF"></td>
-            <td><img src="https://via.placeholder.com/150x100.gif" alt="Placeholder GIF"></td>
+            <td><img src="https://files.catbox.moe/odoyt5.gif" alt="Placeholder GIF"></td>
         </tr>
         <tr>
-            <td>QUAKE III ARENA</td>
-            <td>Stardew Valley (Coming Soon)</td>
+            <td><img src="https://files.catbox.moe/3pxh88.gif" alt="Placeholder GIF"></td>
+            <td><img src="https://files.catbox.moe/cg6fi0.gif" alt="Placeholder GIF"></td>
+        </tr>
+        <tr>
+            <td>Risk of Rain 2</td>
+            <td>Stardew Valley</td>
         </tr>
     </table>
 </body>
 </html>
 
-## Join the Steam Group for Verified games!
+## Here are the websites for Compatible Games!
 
 Official Muon Steam Group: 
-* [Muon Verified](https://steamcommunity.com/groups/muonverified)
-
-**Need help setting up Muon? Here is the Wiki page to assist you!**
-* [Muon Wiki](https://github.com/wtlnetwork/muon/wiki)
+* [Steam Group Page](https://steamcommunity.com/groups/muonverified)
+  
+Website for Infomation & QR codes + printable
+*  [Muon Compatibility Docs](https://wtlnetwork.github.io/muon-docs/)
 
 ## Planned Updates:
+decky-loader plugin pre-store release (0.1.6) ✔
 
-* decky-loader plugin pre-store release (0.1.6) ✔
-* QoL & Bug Fixes based of from feedback (0.1.7+) ✔
-* Decky-loader Store Release (0.2.1) ✔
-* Toaster Notification reconnection fix, UI polish, Steam group button and final code clean up (0.2.5)
-* Stable and Final Build, New Games .gifs for Preview - replace all (1.0)
+QoL & Bug Fixes based of from feedback (0.1.7+) ✔
+
+Decky-loader Store Release (0.2.1) ✔
+
+Compatibilty Lists (Alternative to Steam Group Page Intergration) (0.5.0) ✔
+  
+(0.5.X)
+- Community Feedback bugs and tweaks (list in Issues)
+  
+(0.6.0) - End of October 2026
+
+- Troubleshooting Button - Display page of disclaimers and 
+troubleshooting guides (ripped from Wiki & Steam Group)  
+Bug Fixes:
+Toaster notification when reconnecting devices occur
+  
+(1.0.0) - 2027.
+- UI Polish, main.py code organised into sub-folders, OS Detection Stable
+
+- **Tentative Features**: Muon able to host on BazziteOS (AMD APU Only)
+- ARM Support (If Decky-Loader works on ARM handheld devices)
 
 <h2 align="left">⚠️ PRECAUTION ⚠️</h2>
 
@@ -88,11 +107,14 @@ Official Muon Steam Group:
       <strong>CAUTION: The following actions are not recommended but you can proceed:</strong>
        <ul>
         <li>Using Muon on an Airplane Flight (<b>Please follow flight attendant instructions if Muon Wi-Fi is causing pilot communication interfearances</b>)</li>
+        <li>Set up a lock screen per handheld / laptop</li>
       </ul>
     </td>
   </tr>
 </table>
 
+### Need help? The Wiki page is here to assist you!
+* [Muon Wiki](https://github.com/wtlnetwork/muon/wiki)
 
 ## Libraries Used & Credits
 Built using the Decky Plugin Template [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://deckbrew.xyz/discord) as a basis.
