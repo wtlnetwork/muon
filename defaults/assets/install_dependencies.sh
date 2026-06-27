@@ -1,13 +1,19 @@
 #!/bin/bash
 set -e
 
-SYSEXT_DIR="./muon"
-SYSEXT_RAW="./muon.raw"
+ASSETS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+PLUGIN_DIR="$(dirname "$ASSETS_DIR")"
+BIN_DIR="$PLUGIN_DIR/bin"
+
+SYSEXT_DIR="$ASSETS_DIR/muon"
+SYSEXT_RAW="$ASSETS_DIR/muon.raw"
 SYSEXT_DESTINATION="/var/lib/extensions/muon.raw"
 SYSEXT_RELEASE="${SYSEXT_DIR}/usr/lib/extension-release.d/extension-release.muon"
 
-OS_ID="ID=steamos"
-VERSION_ID=$(grep VERSION_ID /etc/os-release)
+OS_ID=$(grep -E '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+VERSION_ID=$(grep -E '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+
+echo "Detected OS: $OS_ID (Version: $VERSION_ID)"
 
 # Determine whether to rebuild
 SHOULD_REBUILD=false
@@ -29,13 +35,36 @@ if [ "$SHOULD_REBUILD" = true ]; then
 
   mkdir -p "$SYSEXT_DIR"
 
-  for pkg in ../bin/*.pkg.tar.zst; do
-    tar --use-compress-program=unzstd -xf "$pkg" -C "$SYSEXT_DIR"
-  done
+  if [ "$OS_ID" == "steamos" ]; then
+    for pkg in "$BIN_DIR"/*.pkg.tar.zst; do
+      if [ -f "$pkg" ]; then
+        tar --use-compress-program=unzstd -xf "$pkg" -C "$SYSEXT_DIR"
+      fi
+    done
+  #elif [[ "$OS_ID" == "bazzite" || "$OS_ID" == "fedora" ]]; then
+    #echo "Extracting .rpm packages..."
+    #cd "$SYSEXT_DIR"
+    #for pkg in "$BIN_DIR"/*.rpm; do
+    #  if [ -f "$pkg" ]; then
+    #    rpm2cpio "$pkg" | cpio -idmu
+    #  fi
+    #done
+    #cd - > /dev/null
+  else
+    echo "Unsupported OS: $OS_ID. Exiting."
+    exit 1
+  fi
+
+  if [ -d "$SYSEXT_DIR/usr/sbin" ]; then
+      echo "Moving /usr/sbin to /usr/bin for consistency..."
+      mkdir -p "$SYSEXT_DIR/usr/bin"
+      mv -n "$SYSEXT_DIR"/usr/sbin/* "$SYSEXT_DIR"/usr/bin/ || true
+      rm -rf "$SYSEXT_DIR/usr/sbin"
+  fi
 
   mkdir -p "$(dirname "$SYSEXT_RELEASE")"
-  echo "$OS_ID" > "$SYSEXT_RELEASE"
-  echo "$VERSION_ID" >> "$SYSEXT_RELEASE"
+  echo "ID=$OS_ID" > "$SYSEXT_RELEASE"
+  echo "VERSION_ID=$VERSION_ID" >> "$SYSEXT_RELEASE"
 
   chown -R root:root "$SYSEXT_DIR"
 
@@ -48,9 +77,10 @@ fi
 # Link the .raw to system extension dir
 mkdir -p /var/lib/extensions
 if [ ! -f "$SYSEXT_DESTINATION" ]; then
-  ln -s "$PWD/muon.raw" "$SYSEXT_DESTINATION"
+  echo "Copying extension to $SYSEXT_DESTINATION..."
+  cp -f "$SYSEXT_RAW" "$SYSEXT_DESTINATION"
 else
-  echo "Extension already linked."
+  echo "Extension already copied."
 fi
 
 # Enable and refresh systemd-sysext

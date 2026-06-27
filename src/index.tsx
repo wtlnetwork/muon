@@ -17,6 +17,7 @@ import {
 } from "@decky/api";
 import { useState, useEffect } from "react";
 import { FaWifi, FaSpinner, FaCog } from "react-icons/fa";
+import { showCompatibilityListModal } from "./compatibility_list";
 import { showWifiSettingsModal } from "./wifi_settings";
 import { getSignalIcon } from "./signalIcons";
 import { BootIcon } from "./banned_devices";
@@ -44,6 +45,9 @@ function Content() {
   const [hotspotStatus, setHotspotStatus] = useState<"running" | "loading" | "stopped">("stopped");
   const [ssid, setSsid] = useState<string>("");
   const [passphrase, setPassphrase] = useState<string>("");
+  const [channel, setChannel] = useState<string>("");
+  const [hwMode, setHwMode] = useState<string>("");
+  const [countryCode, setCountryCode] = useState<string>("");
   const [alwaysUseStoredCredentials, setAlwaysUseStoredCredentials] = useState<boolean>(false);
   const [baseIp, setBaseIp] = useState("192.168.8.1");
   const [dhcpStart, setDhcpStart] = useState("192.168.8.100");
@@ -90,10 +94,17 @@ function Content() {
           always_use_stored_credentials: boolean;
           ip_address: string;
           dhcp_range: string;
+          channel: string;
+          hw_mode: string;
+          country_code: string;
+
         }>("load_settings")();
         let alwaysUse = storedConfig.always_use_stored_credentials;
         let finalSsid = storedConfig.ssid;
         let finalPassphrase = storedConfig.passphrase;
+        let finalChannel = storedConfig.channel;
+        let finalHwMode = storedConfig.hw_mode;
+        let finalCountryCode = storedConfig.country_code;
   
         if (!finalSsid || !finalPassphrase || finalSsid === "undefined" || finalPassphrase === "undefined") {
           toaster.toast({ title: "Warning", body: "Stored credentials missing! Generating new credentials as failsafe." });
@@ -105,6 +116,10 @@ function Content() {
         setSsid(finalSsid);
         setPassphrase(finalPassphrase);
         setAlwaysUseStoredCredentials(alwaysUse);
+        setChannel(finalChannel);
+        setHwMode(finalHwMode);
+        setCountryCode(finalCountryCode);
+
         setBaseIp(storedConfig.ip_address);
         const [start, end] = storedConfig.dhcp_range.split(",").slice(0, 2);
         setDhcpStart(start);
@@ -380,7 +395,7 @@ function Content() {
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem
-            layout="inline"
+            layout="below"
             onClick={() =>
               showWifiSettingsModal(
                 ssid,
@@ -389,6 +404,9 @@ function Content() {
                 baseIp,
                 dhcpStart,
                 dhcpEnd,
+                channel,
+                hwMode,
+                countryCode,
                 async (
                   newSsid: string,
                   newPassphrase: string,
@@ -413,6 +431,11 @@ function Content() {
             }
           >
             <FaCog /> Edit WiFi Settings
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={() => showCompatibilityListModal()}>
+            Compatibility List
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>

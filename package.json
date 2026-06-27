@@ -1,7 +1,7 @@
 {
   "name": "muon",
-  "version": "0.2.1",
-  "description": "Ad-hoc WiFi networking plugin for Decky.",
+  "version": "0.5.0",
+  "description": "WiFi hotspot plugin for Decky.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -17,7 +17,6 @@
     "plugin",
     "steam-deck",
     "deck",
-    "ad-hoc",
     "wifi",
     "hotspot",
     "tethering",

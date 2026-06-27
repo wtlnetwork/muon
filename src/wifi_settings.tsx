@@ -1,9 +1,10 @@
 import { Field, ModalRoot, showModal, Toggle } from "@decky/ui";
 import { useState } from "react";
 import { ButtonItem, PanelSectionRow, TextField } from "@decky/ui";
-import { FaCheck, FaTimes, FaBan } from "react-icons/fa";
+import { FaCheck, FaTimes, FaBan, FaCog } from "react-icons/fa";
 import { callable, toaster } from "@decky/api";
 import { showBannedDevicesModal } from "./banned_devices";
+import { showAdvancedSettingsModal } from "./advanced_settings";
 import { SubnetDhcpInput } from "./components/SubnetDhcpInput";
 
 export const showWifiSettingsModal = (
@@ -13,6 +14,9 @@ export const showWifiSettingsModal = (
   currentBaseIp: string,
   currentDhcpStart: string,
   currentDhcpEnd: string,
+  currentChannel: string,
+  currentHwMode: string,
+  currentCountryCode: string,
   onSave: (ssid: string, passphrase: string, alwaysUse: boolean, ip: string, dhcpStart: string, dhcpEnd: string) => void
 ) => {
   showModal(
@@ -23,6 +27,9 @@ export const showWifiSettingsModal = (
       currentBaseIp={currentBaseIp}
       currentDhcpStart={currentDhcpStart}
       currentDhcpEnd={currentDhcpEnd}
+      currentChannel={currentChannel}
+      currentHwMode={currentHwMode}
+      currentCountryCode={currentCountryCode}
       onSave={onSave}
     />,
     undefined,
@@ -37,6 +44,9 @@ const WifiSettingsModal = ({
   currentBaseIp,
   currentDhcpStart,
   currentDhcpEnd,
+  currentChannel,
+  currentHwMode,
+  currentCountryCode,
   onSave,
   closeModal,
 }: {
@@ -46,6 +56,9 @@ const WifiSettingsModal = ({
   currentBaseIp: string;
   currentDhcpStart: string;
   currentDhcpEnd: string;
+  currentChannel: string;
+  currentHwMode: string;
+  currentCountryCode: string;
   onSave: (ssid: string, passphrase: string, alwaysUse: boolean, ip: string, dhcpStart: string, dhcpEnd: string) => void
   closeModal?: () => void;
 }) => {
@@ -56,6 +69,9 @@ const WifiSettingsModal = ({
   const [baseIp, setBaseIp] = useState(currentBaseIp);
   const [dhcpStart, setDhcpStart] = useState(currentDhcpStart);
   const [dhcpEnd, setDhcpEnd] = useState(currentDhcpEnd);
+  const [channel, setChannel] = useState<string>(currentChannel);
+  const [hwMode, setHwMode] = useState<string>(currentHwMode);
+  const [countryCode, setCountryCode] = useState<string>(currentCountryCode);
 
   const handleSave = async () => {
     if (newPassphrase.length < 8 || newPassphrase.length > 63) {
@@ -125,6 +141,25 @@ const WifiSettingsModal = ({
       <PanelSectionRow>
         <ButtonItem layout="inline" onClick={showBannedDevicesModal}>
           <FaBan /> Manage Banned Devices
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="inline"
+          onClick={() =>
+            showAdvancedSettingsModal(
+              channel, 
+              hwMode,
+              countryCode,
+              (newChannel: string, newHwMode: string, newCountryCode: string) => {
+                setChannel(newChannel);
+                setHwMode(newHwMode);
+                setCountryCode(newCountryCode);
+              }
+            )
+          }
+        >
+          <FaCog /> Advanced Settings
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>

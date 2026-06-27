@@ -1,9 +1,6 @@
 #!/bin/bash
 
 WIFI_INTERFACE=$1
-ORIGINAL_IP=$2
-ORIGINAL_GATEWAY=$3
-ORIGINAL_DNS=$4
 AP_IF="muon0"
 
 echo "Restoring network configuration for $WIFI_INTERFACE..."
@@ -26,7 +23,7 @@ echo "Restarting NetworkManager and iwd..."
 sudo systemctl restart NetworkManager
 sudo systemctl restart iwd
 
-# Bring the main Wi-Fi interface back up
+# Step 5: Bring the main Wi-Fi interface back up
 sudo ip link set "$WIFI_INTERFACE" up
 
 echo "Network configuration restored successfully."

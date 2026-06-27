@@ -2,12 +2,10 @@
 
 # Full IP Address (e.g. 192.168.8.1)
 IP_ADDRESS=$1
+ZONE_NAME="muon-hotspot"
+AP_IF="muon0"
 
-echo "Configuring firewalld for IP address: $IP_ADDRESS"
-
-# Extract subnet from IP Address (e.g. 192.168.8.1 -> 192.168.8.0)
-SUBNET=$(echo "$IP_ADDRESS" | sed 's/\.[0-9]\+$/\.0/')
-echo "Extracted Subnet: $SUBNET/24"
+echo "Configuring firewalld for hotspot on $AP_IF (IP: $IP_ADDRESS)..."
 
 # Check if firewalld is active
 FIREWALLD_STATUS=$(sudo systemctl is-active firewalld)
@@ -18,38 +16,33 @@ if [ "$FIREWALLD_STATUS" != "active" ]; then
     exit 1
 fi
 
-# Get the active zone, default to 'public' if not found
-ACTIVE_ZONE=$(sudo firewall-cmd --get-active-zones | awk 'NR==1{print $1}')
-if [ -z "$ACTIVE_ZONE" ]; then
-    echo "Could not determine the active firewalld zone. Using default: public"
-    ACTIVE_ZONE="public"
-fi
-echo "Using firewalld zone: $ACTIVE_ZONE"
-
-# Allow broadcast traffic and UDP for server discovery
-echo "Allowing broadcast traffic for server discovery..."
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=udp accept" --permanent
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 destination address=255.255.255.255 protocol value=tcp accept" --permanent
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-rich-rule="rule family=ipv4 source address=${SUBNET}/24 protocol value=udp accept" --permanent
-
-# Allow DHCP service
-echo "Allowing DHCP traffic..."
-sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-service=dhcp --permanent
-
-# Check if the muon0 interface is in the active zone and add it if it isn't
-if ! sudo firewall-cmd --zone="$ACTIVE_ZONE" --list-interfaces | grep -qw muon0; then
-    echo "Adding muon0 to zone $ACTIVE_ZONE..."
-    sudo firewall-cmd --zone="$ACTIVE_ZONE" --add-interface=muon0 --permanent
-fi
-
-# Reload firewalld to apply changes
-echo "Reloading firewalld to apply changes..."
-FIREWALLD_RELOAD=$(sudo firewall-cmd --reload)
-
-if [ "$FIREWALLD_RELOAD" == "success" ]; then
-    echo "Firewalld configuration updated successfully."
-    exit 0
+# Create a custom zone for the hotspot called 'muon-hotspot' if it doesn't already exist.
+# When the hotspot is not active, the zone will be inert, as no active devices will be assigned to it.
+if ! sudo firewall-cmd --get-zones | grep -qw "$ZONE_NAME"; then
+    echo "Creating permanent zone '$ZONE_NAME'..."
+    sudo firewall-cmd --permanent --new-zone="$ZONE_NAME"
+    # Allow all traffic within the zone. This will allow uninhibited communication between all devices connected to the hotspot.
+    sudo firewall-cmd --permanent --zone="$ZONE_NAME" --set-target=ACCEPT
+    sudo firewall-cmd --reload
+    echo "Zone '$ZONE_NAME' created."
 else
-    echo "Failed to reload firewalld."
-    exit 1
+    echo "Zone '$ZONE_NAME' already exists."
 fi
+
+# Bind the muon0 interface to the muon-hotspot zone. Permanent setting is fine as it only applies to the muon0 interface.
+echo "Binding $AP_IF to zone '$ZONE_NAME'..."
+sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-interface="$AP_IF"
+
+# Enable masquerading - this will only be useful if we decide to integrate internet sharing. No plans for this, but worth setting in case.
+echo "Enabling masquerade on zone '$ZONE_NAME'..."
+sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-masquerade
+
+# Allow DHCP service.
+echo "Allowing DHCP on zone '$ZONE_NAME'..."
+sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-service=dhcp
+
+echo "Reloading firewalld to apply changes to running configuration..."
+sudo firewall-cmd --reload
+
+echo "Firewalld configured successfully."
+exit 0
