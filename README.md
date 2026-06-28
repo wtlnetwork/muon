@@ -107,7 +107,7 @@ Toaster notification when reconnecting devices occur
       <strong>CAUTION: The following actions are not recommended but you can proceed:</strong>
        <ul>
         <li>Using Muon on an Airplane Flight (<b>Please follow flight attendant instructions if Muon Wi-Fi is causing pilot communication interfearances</b>)</li>
-        <li>Set up a lock screen per handheld / laptop</li>
+        <li>Not having a lock screen on handheld devices or laptops</li>
       </ul>
     </td>
   </tr>
