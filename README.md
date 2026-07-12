@@ -1,8 +1,6 @@
-# **Muon - Play LAN Multiplayer games on the go!**
+# **Play LAN Multiplayer games on the go!**
 
 Muon is a decky-loader plugin that creates a hotspot for other devices to connect locally.
-
-**Download the Muon plugin from the decky-loader storefront!**
 
 <div align="left" valign="middle">
  <picture>
@@ -23,13 +21,19 @@ Muon is a decky-loader plugin that creates a hotspot for other devices to connec
 
 **List of Features:**
 * Steam Deck host must download the plugin; guests do not have to.
-* Random host password generation per device restart with option to keep it static.
-* UI showcasing IP addresses for host & guest devices with signal strength.
+* Random host password generation\
+  per device restart with option to keep it static.
+* UI showcasing IP addresses for\
+  host & guest devices with signal strength.
 * Toaster notifications for joined & disconnected devices.
 * Option to change IP and DHCP for Host Steam Deck.
 * Ability to ban untrusted device IPs.
 * Swap between 2.4GHz and 5GHz Signals for Distance or Speeds.
-* Integrated offline wiki page of compatible games, mod installs, and dedicated server guides.
+* Integrated offline wiki page of:\
+  compatible games, mod installs, and dedicated server guides.
+
+**Download the Muon plugin from the decky-loader storefront!**
+  
 ## Preview:
 __Here are a sample of games verified and supported for Muon!__
 
@@ -76,13 +80,15 @@ Decky-loader Store Release (0.2.1) ✔
 Compatibilty Lists (Alternative to Steam Group Page Intergration) (0.5.0) ✔
   
 (0.5.X)
-- Community Feedback bugs and tweaks (list in Issues)
+- Community Feedback bugs and tweaks (submit in Issues page)
   
 (0.6.0) - End of October 2026
 
-- Troubleshooting Button - Display page of disclaimers and 
-troubleshooting guides (ripped from Wiki & Steam Group)  
-Bug Fixes:
+- Troubleshooting Button -\
+  Display page of disclaimers and\
+  troubleshooting guides (ripped from Wiki & Steam Group)
+
+  - Bug Fixes:
 Toaster notification when reconnecting devices occur
   
 (1.0.0) - 2027.
