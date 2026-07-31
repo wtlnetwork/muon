@@ -2,20 +2,10 @@
 
 Muon is a decky-loader plugin that creates a hotspot for other devices to connect locally.
 
-<div align="left" valign="middle">
+<a>
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://i.redd.it/09s8h9ccq73a1.gif">
-   <img align="right" src="https://i.redd.it/09s8h9ccq73a1.gif" height="102px"/>
- </picture>
-<div align="left" valign="middle">
- <picture>
-   <source media="(prefers-color-scheme: white)" srcset="https://assets-v2.lottiefiles.com/a/c567b756-1150-11ee-954b-b32207c2d9a1/eF6XqaqeFx.gif">
-   <img align="right" src="https://assets-v2.lottiefiles.com/a/c567b756-1150-11ee-954b-b32207c2d9a1/eF6XqaqeFx.gif" height="102px"/>
- </picture>
-<div align="left" valign="middle">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://i.redd.it/09s8h9ccq73a1.gif">
-   <img align="right" src="https://i.redd.it/09s8h9ccq73a1.gif" height="102px"/>
+   <source media="(prefers-color-scheme: white)" srcset="https://i.imgur.com/nkyWdV1.png">
+   <img align="right" src="https://i.imgur.com/nkyWdV1.png" height="540px" style="padding-left: 50; margin-left: 0;"/>
  </picture>
 </a>
 
@@ -31,11 +21,6 @@ Muon is a decky-loader plugin that creates a hotspot for other devices to connec
 * Swap between 2.4GHz and 5GHz Signals for Distance or Speeds.
 * Integrated offline wiki page of:\
   compatible games, mod installs, and dedicated server guides.
-
-**Download the Muon plugin from the decky-loader storefront!**
-  
-## Preview:
-__Here are a sample of games verified and supported for Muon!__
 
 <head>
     <meta charset="UTF-8">
@@ -62,7 +47,7 @@ __Here are a sample of games verified and supported for Muon!__
 </body>
 </html>
 
-## Here are the websites for Compatible Games!
+## Website Links of Compatible Games!
 
 Official Muon Steam Group: 
 * [Steam Group Page](https://steamcommunity.com/groups/muonverified)
@@ -124,10 +109,6 @@ Toaster notification when reconnecting devices occur
 
 ## Libraries Used & Credits
 Built using the Decky Plugin Template [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://deckbrew.xyz/discord) as a basis.
-
-Animated Wi-Fi Logo by: Esko Ahonen
-
-Animated Steam Deck by: Valve Software
 
 Tormak9970 - Used Deck-P2P as a reference point.
 
