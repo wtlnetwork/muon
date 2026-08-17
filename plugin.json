@@ -4,8 +4,8 @@
   "flags": ["root"],
   "api_version": 1,
   "publish": {
-    "tags": ["wifi", "multiplayer", "root"],
-    "description": "WiFi hotspot plugin for Decky.",
+    "tags": ["WLAN", "multiplayer", "root"],
+    "description": "Play LAN Multiplayer games on the go!",
     "image": "https://raw.githubusercontent.com/wtlnetwork/muon/refs/heads/main/assets/logo.png"
   }
 }
