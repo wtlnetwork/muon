@@ -29,11 +29,11 @@ Muon is a decky-loader plugin that creates a hotspot for other devices to connec
     <table>
         <tr>
             <td>QUAKE III ARENA</td>
-            <td>GoldenEye: Source</td>
+            <td>Left 4 Dead 2</td></td>
         </tr>
         <tr>
             <td><img src="https://i.imgur.com/iqdeSSt.gif" alt="Placeholder GIF"></td>
-            <td><img src="https://files.catbox.moe/odoyt5.gif" alt="Placeholder GIF"></td>
+            <td><img src="https://files.catbox.moe/oa8rk9.gif" alt="Placeholder GIF"></td>
         </tr>
         <tr>
             <td><img src="https://files.catbox.moe/3pxh88.gif" alt="Placeholder GIF"></td>
