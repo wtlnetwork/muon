@@ -1,6 +1,6 @@
 {
   "name": "muon",
-  "version": "0.5.0",
+  "version": "0.5.0.3",
   "description": "Play LAN Multiplayer games on the go!",
   "type": "module",
   "scripts": {
@@ -55,13 +55,18 @@
   "remote_binary":
   [
     {
-      "name": "dnsmasq-2.91-1-x86_64.pkg.tar.zst",
-      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/dnsmasq-2.91-1-x86_64.pkg.tar.zst",
+      "name": "dnsmasq-steamos39.pkg.tar.zst",
+      "url": "https://github.com/wtlnetwork/muon-deps/raw/refs/heads/main/dnsmasq-2.93-1-x86_64.pkg.tar.zst",
+      "sha256hash": "443d70d2606549270b1ef52183926714e515f81413db33ff96006e23866ad790"
+    },
+    {
+      "name": "dnsmasq-steamos38.pkg.tar.zst",
+      "url": "https://raw.githubusercontent.com/wtlnetwork/muon-deps/refs/heads/main/dnsmasq-2.91-1-x86_64.pkg.tar.zst",
       "sha256hash": "7706d35ea76993c8e10068eb4190ef25e7d712c054a2b5df267848d71a41f650"
     },
     {
-      "name": "hostapd-2.11-4-x86_64.pkg.tar.zst",
-      "url": "https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-main/os/x86_64/hostapd-2.11-4-x86_64.pkg.tar.zst",
+      "name": "hostapd.pkg.tar.zst",
+      "url": "https://github.com/wtlnetwork/muon-deps/raw/refs/heads/main/hostapd-2.11-4-x86_64.pkg.tar.zst",
       "sha256hash": "5085046d71c49f741218b10a19e1eaa3bb25a337fd6829018982a72535903d3d"
     }
   ]

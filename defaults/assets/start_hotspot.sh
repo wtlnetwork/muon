@@ -22,12 +22,11 @@ echo "Using PHY $PHY to create $AP_IF"
 
 # Step 1: Stop network services
 echo "Stopping network services..."
-sudo systemctl stop NetworkManager
-sudo systemctl stop iwd
-if [ $? -ne 0 ]; then
-    echo "Failed to stop network services."
-    exit 1
-fi
+
+sudo systemctl stop NetworkManager || true
+sudo systemctl stop iwd || true
+sudo systemctl stop wpa_supplicant || true
+
 echo "Network services stopped."
 
 # Step 2: Create AP interface (muon0) and configure static IP there
@@ -39,8 +38,12 @@ if ip link show "$AP_IF" >/dev/null 2>&1; then
   sleep 0.5
 fi
 
-echo "Bringing down $WIFI_INTERFACE to prepare for $AP_IF..."
-sudo ip link set "$WIFI_INTERFACE" down
+if ip link show "$WIFI_INTERFACE" >/dev/null 2>&1; then
+    echo "Bringing down $WIFI_INTERFACE to prepare for $AP_IF..."
+    sudo ip link set "$WIFI_INTERFACE" down || true
+else
+    echo "$WIFI_INTERFACE is no longer present after stopping network services; continuing with $PHY."
+fi
 
 if ! sudo iw phy "$PHY" interface add "$AP_IF" type __ap; then
   echo "Failed to create $AP_IF on $PHY."

@@ -29,6 +29,7 @@ class Plugin:
         self.compatibility_url = "https://raw.githubusercontent.com/wtlnetwork/muon-docs/refs/heads/main/static/gameinfo/supported_games.json"
         self.compatibility_save_path = f"{self.assetsDir}/compatibility.json"
         self.current_directory = os.path.dirname(__file__)
+        self.service_states = {}
         # Regex which matches valid MAC addresses.
         self.VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
         # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
@@ -77,19 +78,41 @@ class Plugin:
     # SYSEXT METHODS
     async def activate_muon_sysext(self):
         muon_raw = os.path.join(self.assetsDir, "muon.raw")
-        link_path = "/var/lib/extensions/muon.raw"
+        install_script = os.path.join(
+            self.assetsDir,
+            "install_dependencies.sh",
+        )
+        destination = "/var/lib/extensions/muon.raw"
+
+        decky.logger.info("Validating Muon sysext against current OS...")
+
+        await self.run_command(
+            ["bash", install_script],
+            check=True,
+            cwd=self.assetsDir,
+        )
 
         if not os.path.exists(muon_raw):
-            decky.logger.warning("muon.raw not found - attempting to build via install script.")
-            await self.run_command(f"bash {os.path.join(self.assetsDir, 'install_dependencies.sh')}")
+            raise RuntimeError(
+                "Muon sysext validation completed but muon.raw does not exist."
+            )
 
-        await self.run_command(f"sudo cp -f '{muon_raw}' '{link_path}'")
+        await self.run_command(
+            ["sudo", "mkdir", "-p", "/var/lib/extensions"],
+            check=True,
+        )
 
-        try:
-            out = await self.run_command("systemd-sysext refresh")
-            decky.logger.info(f"sysext refresh output: {out}")
-        except Exception as e:
-            decky.logger.error(f"sysext refresh after activation failed: {e}")
+        await self.run_command(
+            ["sudo", "cp", "-f", muon_raw, destination],
+            check=True,
+        )
+
+        out = await self.run_command(
+            ["sudo", "systemd-sysext", "refresh"],
+            check=True,
+        )
+
+        decky.logger.info(f"sysext refresh output: {out}")
 
     async def deactivate_muon_sysext(self):
         link_path = "/var/lib/extensions/muon.raw"
@@ -318,10 +341,22 @@ class Plugin:
                 decky.logger.info("Hotspot started successfully.")
                 return True
 
-            except Exception as e:
-                decky.logger.error(f"Failed to start hotspot: {str(e)}")
+            except subprocess.CalledProcessError as e:
+                decky.logger.error(
+                    f"Hotspot command failed with exit code {e.returncode}"
+                )
+                if e.output:
+                    decky.logger.error(f"Command stdout:\n{e.output}")
+                  
+                if e.stderr:
+                    decky.logger.error(f"Command stderr:\n{e.stderr}")
+                   
+                await self.stop_hotspot()
                 return False
-
+               
+            except Exception as e:
+                decky.logger.error(f"Failed to start hotspot: {e}")
+                
     async def stop_hotspot(self):
         decky.logger.info("Stopping Hotspot")
         try:
@@ -342,6 +377,7 @@ class Plugin:
                 decky.logger.error("Failed to restore network configuration.")
             await self.deactivate_muon_sysext()
             decky.logger.info("Hotspot stopped")
+            await self.restore_service_states()
         except Exception as e:
             decky.logger.error(f"Failed to stop hotspot: {str(e)}")
 
@@ -409,7 +445,9 @@ class Plugin:
             self.wifi_interface,
             self.ip_address,
             country_code
-        ])
+            ],
+            check=True,
+        )
 
         if "Hotspot started successfully" in result:
             self.hotspot_active = True
@@ -527,7 +565,7 @@ class Plugin:
         # Initialise variable for storing service states
         self.service_states = {}
         # Array of services to check
-        services = ["NetworkManager", "iwd"]
+        services = ["NetworkManager", "iwd", "wpa_supplicant"]
 
         # For each service in the services array:
         for service in services:
@@ -538,6 +576,16 @@ class Plugin:
             decky.logger.info(f"Service {service}: {'Active' if self.service_states[service] else 'Inactive'}")
 
         decky.logger.info(f"Captured service states: {self.service_states}")
+
+    async def restore_service_states(self):
+        decky.logger.info("Restoring network service states...")
+
+        for service in ["iwd", "wpa_supplicant", "NetworkManager"]:
+            if self.service_states.get(service, False):
+                await self.run_command(
+                    ["sudo", "systemctl", "start", service],
+                    check=False,
+                )
 
     async def configure_firewalld(self):
         # Configure firewalld for broadcast and DHCP traffic using a shell script.
@@ -590,7 +638,14 @@ class Plugin:
         decky.logger.info("Starting DHCP Server.")
 
         result = await self.run_command(
-            f"bash {script_path} {self.ap_interface} {self.dhcp_range} {self.ip_address}"
+            [
+                "bash",
+                script_path,
+                self.ap_interface,
+                self.dhcp_range,
+                self.ip_address,
+            ],
+            check=True,
         )
 
         if "dnsmasq is running" in result:
@@ -872,6 +927,13 @@ class Plugin:
                     decky.logger.debug(f"Command output: {stdout.decode().strip()}")
             if stderr:
                 decky.logger.error(f"Command error: {stderr.decode().strip()}")
+            if check and result.returncode != 0:
+                raise subprocess.CalledProcessError(
+                    result.returncode,
+                    command,
+                    output=stdout.decode().strip(),
+                    stderr=stderr.decode().strip(),
+                )
             return stdout.decode().strip()
 
     async def ensure_wlan0_up(self):
