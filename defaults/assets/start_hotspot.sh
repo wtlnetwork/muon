@@ -23,9 +23,9 @@ echo "Using PHY $PHY to create $AP_IF"
 # Step 1: Stop network services
 echo "Stopping network services..."
 
-sudo systemctl stop NetworkManager || true
-sudo systemctl stop iwd || true
-sudo systemctl stop wpa_supplicant || true
+sudo systemctl stop NetworkManager
+sudo systemctl stop iwd
+sudo systemctl stop wpa_supplicant
 
 echo "Network services stopped."
 
@@ -38,12 +38,8 @@ if ip link show "$AP_IF" >/dev/null 2>&1; then
   sleep 0.5
 fi
 
-if ip link show "$WIFI_INTERFACE" >/dev/null 2>&1; then
-    echo "Bringing down $WIFI_INTERFACE to prepare for $AP_IF..."
-    sudo ip link set "$WIFI_INTERFACE" down || true
-else
-    echo "$WIFI_INTERFACE is no longer present after stopping network services; continuing with $PHY."
-fi
+echo "Bringing down $WIFI_INTERFACE to prepare for $AP_IF..."
+sudo ip link set "$WIFI_INTERFACE" down
 
 if ! sudo iw phy "$PHY" interface add "$AP_IF" type __ap; then
   echo "Failed to create $AP_IF on $PHY."

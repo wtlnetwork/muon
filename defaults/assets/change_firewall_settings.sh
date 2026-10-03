@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# Full IP Address (e.g. 192.168.8.1)
 IP_ADDRESS=$1
 ZONE_NAME="muon-hotspot"
 AP_IF="muon0"
 
 echo "Configuring firewalld for hotspot on $AP_IF (IP: $IP_ADDRESS)..."
 
-# Check if firewalld is active
 FIREWALLD_STATUS=$(sudo systemctl is-active firewalld)
 echo "Firewalld status: $FIREWALLD_STATUS"
 
@@ -16,33 +14,63 @@ if [ "$FIREWALLD_STATUS" != "active" ]; then
     exit 1
 fi
 
-# Create a custom zone for the hotspot called 'muon-hotspot' if it doesn't already exist.
-# When the hotspot is not active, the zone will be inert, as no active devices will be assigned to it.
+# Create zone if necessary.
 if ! sudo firewall-cmd --get-zones | grep -qw "$ZONE_NAME"; then
     echo "Creating permanent zone '$ZONE_NAME'..."
     sudo firewall-cmd --permanent --new-zone="$ZONE_NAME"
-    # Allow all traffic within the zone. This will allow uninhibited communication between all devices connected to the hotspot.
-    sudo firewall-cmd --permanent --zone="$ZONE_NAME" --set-target=ACCEPT
-    sudo firewall-cmd --reload
-    echo "Zone '$ZONE_NAME' created."
-else
-    echo "Zone '$ZONE_NAME' already exists."
 fi
 
-# Bind the muon0 interface to the muon-hotspot zone. Permanent setting is fine as it only applies to the muon0 interface.
-echo "Binding $AP_IF to zone '$ZONE_NAME'..."
-sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-interface="$AP_IF"
+# Always enforce a completely permissive zone target.
+echo "Setting '$ZONE_NAME' target to ACCEPT..."
+sudo firewall-cmd --permanent \
+    --zone="$ZONE_NAME" \
+    --set-target=ACCEPT
 
-# Enable masquerading - this will only be useful if we decide to integrate internet sharing. No plans for this, but worth setting in case.
-echo "Enabling masquerade on zone '$ZONE_NAME'..."
-sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-masquerade
+# Assign muon0 permanently.
+echo "Assigning $AP_IF to '$ZONE_NAME' permanently..."
+sudo firewall-cmd --permanent \
+    --zone="$ZONE_NAME" \
+    --change-interface="$AP_IF"
 
-# Allow DHCP service.
-echo "Allowing DHCP on zone '$ZONE_NAME'..."
-sudo firewall-cmd --permanent --zone="$ZONE_NAME" --add-service=dhcp
+# DHCP is explicitly allowed even though ACCEPT should already permit traffic.
+echo "Allowing DHCP..."
+sudo firewall-cmd --permanent \
+    --zone="$ZONE_NAME" \
+    --add-service=dhcp
 
-echo "Reloading firewalld to apply changes to running configuration..."
+# Keep masquerading enabled for future routed/internet-sharing use.
+echo "Enabling masquerading..."
+sudo firewall-cmd --permanent \
+    --zone="$ZONE_NAME" \
+    --add-masquerade
+
+# Apply permanent configuration.
+echo "Reloading firewalld..."
 sudo firewall-cmd --reload
+
+# Explicitly ensure muon0 is assigned to the correct zone at runtime too.
+echo "Ensuring runtime assignment of $AP_IF..."
+sudo firewall-cmd \
+    --zone="$ZONE_NAME" \
+    --change-interface="$AP_IF"
+
+# Explicit runtime target as well.
+sudo firewall-cmd \
+    --zone="$ZONE_NAME" \
+    --set-target=ACCEPT
+
+# Verify what we actually ended up with.
+ACTIVE_ZONE=$(sudo firewall-cmd --get-zone-of-interface="$AP_IF")
+
+echo "Runtime zone for $AP_IF: $ACTIVE_ZONE"
+
+if [ "$ACTIVE_ZONE" != "$ZONE_NAME" ]; then
+    echo "ERROR: $AP_IF is in '$ACTIVE_ZONE', expected '$ZONE_NAME'."
+    exit 1
+fi
+
+echo "Final runtime firewall configuration:"
+sudo firewall-cmd --zone="$ZONE_NAME" --list-all
 
 echo "Firewalld configured successfully."
 exit 0

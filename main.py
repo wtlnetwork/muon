@@ -414,6 +414,7 @@ class Plugin:
             "wmm_enabled=1",
             "broadcast_deauth=0",
             "no_probe_resp_if_max_sta=0",
+            "ap_isolate=0",
             "multicast_to_unicast=0"
         ]
 
