@@ -7,13 +7,20 @@ import aiohttp
 import asyncio
 import ssl
 import certifi
+import logging
 from pathlib import Path
 from settings import SettingsManager
 
 class Plugin:
     # Define default WiFi interface, plugin directory, settings file, IP/DHCP range, and initialise statuses.
     def __init__(self):
-        self.debug = True
+        self.debug = False
+        # If debug is set to True, allow for more verbose logging.
+        decky.logger.setLevel(logging.DEBUG if self.debug else logging.INFO)
+        if self.debug:
+            for handler in decky.logger.handlers:
+                handler.setLevel(logging.DEBUG)
+
         self.wifi_interface = "wlan0"
         self.ap_interface = "muon0"
         self.settingsDir = os.environ.get("DECKY_PLUGIN_SETTINGS_DIR", "/tmp")
@@ -34,8 +41,7 @@ class Plugin:
         self.VALID_MAC_REGEX = re.compile(r"^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
         # Default MAC addresses included in the hostapd.deny file. We don't need to worry about these.
         self.EXCLUDED_MACS = {"00:20:30:40:50:60", "00:ab:cd:ef:12:34", "00:00:30:40:50:60"}
-        if self.debug:
-            decky.logger.debug(f"Muon initialised. Settings directory: {self.settingsDir}, Assets directory: {self.assetsDir}")
+        decky.logger.debug(f"Muon initialised. Settings directory: {self.settingsDir}, Assets directory: {self.assetsDir}")
 
     async def _main(self):
         decky.logger.info("Hotspot Plugin Loaded")
@@ -121,7 +127,7 @@ class Plugin:
 
         # Refresh sysext after removing Muon
         try:
-            out = await self.run_command("systemd-sysext refresh")
+            out = await self.run_command("systemd-sysext refresh", check=True)
             decky.logger.info(f"sysext refresh output: {out}")
         except Exception as e:
             decky.logger.error(f"sysext refresh after deactivation failed: {e}")
@@ -386,7 +392,7 @@ class Plugin:
         try:
             result = await self.run_command("pgrep -x hostapd", check=False)
             is_active = bool(result.strip())
-            decky.logger.info(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
+            decky.logger.debug(f"Hotspot status: {'Active' if is_active else 'Inactive'}")
             return is_active
         except Exception as e:
             decky.logger.error(f"Error checking hotspot status: {e}")
@@ -923,11 +929,16 @@ class Plugin:
                 )
 
             stdout, stderr = await result.communicate()
-            if self.debug:
-                if stdout:
-                    decky.logger.debug(f"Command output: {stdout.decode().strip()}")
+            if stdout:
+                decky.logger.debug(f"Command output: {stdout.decode().strip()}")
             if stderr:
-                decky.logger.error(f"Command error: {stderr.decode().strip()}")
+                # Check if stderr messages are actual errors. Only produce error output if they are.
+                if result.returncode == 0:
+                    decky.logger.debug(f"Command stderr: {stderr.decode().strip()}")
+                else:
+                    decky.logger.error(
+                        f"Command failed (exit {result.returncode}), stderr: {stderr.decode().strip()}"
+                    )
             if check and result.returncode != 0:
                 raise subprocess.CalledProcessError(
                     result.returncode,

@@ -1,12 +1,18 @@
 #!/bin/bash
 
+set -Ee -o pipefail
+trap 'status=$?; echo "ERROR: Firewall configuration failed at line $LINENO (exit status $status)." >&2; exit "$status"' ERR
+
 IP_ADDRESS=$1
 ZONE_NAME="muon-hotspot"
 AP_IF="muon0"
 
 echo "Configuring firewalld for hotspot on $AP_IF (IP: $IP_ADDRESS)..."
 
-FIREWALLD_STATUS=$(sudo systemctl is-active firewalld)
+if ! FIREWALLD_STATUS=$(sudo systemctl is-active firewalld); then
+    echo "ERROR: Firewalld is not active or its status could not be checked: $FIREWALLD_STATUS" >&2
+    exit 1
+fi
 echo "Firewalld status: $FIREWALLD_STATUS"
 
 if [ "$FIREWALLD_STATUS" != "active" ]; then
@@ -15,7 +21,8 @@ if [ "$FIREWALLD_STATUS" != "active" ]; then
 fi
 
 # Create zone if necessary.
-if ! sudo firewall-cmd --get-zones | grep -qw "$ZONE_NAME"; then
+PERMANENT_ZONES=$(sudo firewall-cmd --permanent --get-zones)
+if ! grep -qw "$ZONE_NAME" <<< "$PERMANENT_ZONES"; then
     echo "Creating permanent zone '$ZONE_NAME'..."
     sudo firewall-cmd --permanent --new-zone="$ZONE_NAME"
 fi
@@ -53,11 +60,6 @@ echo "Ensuring runtime assignment of $AP_IF..."
 sudo firewall-cmd \
     --zone="$ZONE_NAME" \
     --change-interface="$AP_IF"
-
-# Explicit runtime target as well.
-sudo firewall-cmd \
-    --zone="$ZONE_NAME" \
-    --set-target=ACCEPT
 
 # Verify what we actually ended up with.
 ACTIVE_ZONE=$(sudo firewall-cmd --get-zone-of-interface="$AP_IF")
