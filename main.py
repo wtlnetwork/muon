@@ -421,7 +421,7 @@ class Plugin:
             "broadcast_deauth=0",
             "no_probe_resp_if_max_sta=0",
             "ap_isolate=0",
-            "multicast_to_unicast=0"
+            "multicast_to_unicast=1"
         ]
 
         # Append 5 GHz-specific capabilities if applicable

@@ -18,11 +18,10 @@ interface=$INTERFACE
 bind-dynamic
 dhcp-range=$DHCP_RANGE
 dhcp-option=3,$IP_ADDRESS  # Gateway
-dhcp-option=6,1.1.1.1,8.8.8.8  # DNS for clients
+dhcp-option=6
 port=0  # Disable DNS serving
 log-dhcp
 log-facility=$DNSMASQ_LOG  # Save logs here
-#dhcp-broadcast
 dhcp-leasefile=/tmp/muon-dnsmasq.leases
 EOT
 echo "dnsmasq config generated successfully."

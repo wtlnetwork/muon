@@ -55,6 +55,7 @@ echo "Assigning IP $STATIC_IP/24 to $AP_IF..."
 sudo ip addr flush dev "$AP_IF" || true
 sudo ip addr add "$STATIC_IP/24" dev "$AP_IF"
 sleep 1
+sudo ip route replace 255.255.255.255/32 dev "$AP_IF"
 
 FINAL_IP_CHECK=$(ip addr show "$AP_IF" | grep -oP 'inet \K[\d.]+')
 if [ "$FINAL_IP_CHECK" != "$STATIC_IP" ]; then
